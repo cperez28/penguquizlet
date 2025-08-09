@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pengu Quizlet</title>
+  <style>
+    /* Pastel palette tuned for a friendly learning experience */
+    :root {
+      --bg: #fff7fb;
+      --panel: #ffe9f4;
+      --muted: #8a8a9e;
+      --ink: #3b3b45;
+      --accent: #ff76b9;
+      --accent2: #ffa6cf;
+      --accent3: #ffd1e8;
+      --chip: #fff0f8;
+      --border: #f7c6dc;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 10px 28px rgba(255, 118, 185, 0.28);
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      color: var(--ink);
+      background: linear-gradient(180deg, var(--bg), var(--panel));
+      /* Base font size tuned for consistent readability across modes */
+      font-size: 18px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    /* Brand icon: simple circle with P letter instead of external image */
+    .pengu {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: var(--shadow);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    button, select, input, textarea {
+      background: var(--chip);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 12px;
+    }
+    button {
+      cursor: pointer;
+      transition: transform 0.06s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: #ff5cab;
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    button.ghost {
+      background: transparent;
+      border-color: var(--border);
+    }
+    button.warn {
+      background: var(--warn);
+      color: #111827;
+      border-color: #b45309;
+    }
+    button.danger {
+      background: var(--danger);
+      border-color: #b91c1c;
+      color: white;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-top: 12px;
+      box-shadow: var(--shadow);
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.cols-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .space-between {
+      justify-content: space-between;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .pill {
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: #fff;
+    }
+    .progress {
+      height: 10px;
+      background: #ffe9f4;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .progress > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    /* Flashcards */
+    .flash-wrap {
+      position: relative;
+      min-height: 300px;
+    }
+    .flash-card {
+      position: relative;
+      margin: auto;
+      max-width: 820px;
+      height: 360px;
+      perspective: 1200px;
+      cursor: pointer;
+    }
+    .flash-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .flash-inner.flipped {
+      transform: rotateY(180deg);
+    }
+    .flash-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border-radius: 22px;
+    }
+    .flash-front {
+      background: linear-gradient(135deg, #fff, var(--panel));
+    }
+    .flash-back {
+      transform: rotateY(180deg);
+      background: linear-gradient(135deg, #fff, var(--accent3));
+    }
+    .term {
+      /* Moderate large font for terms in flashcards */
+      font-size: 2rem;
+      text-align: center;
+    }
+    .def {
+      /* Slightly smaller font for definitions */
+      font-size: 1.3rem;
+      color: #5b5563;
+      text-align: center;
+    }
+    .full-screen {
+      position: fixed;
+      inset: 0;
+      padding: 24px;
+      background: rgba(255, 240, 248, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .correct {
+      border-color: var(--success);
+      background: linear-gradient(0deg, #f0fff4, #ffffff);
+    }
+    .incorrect {
+      border-color: var(--danger);
+      background: linear-gradient(0deg, #fff5f5, #ffffff);
+    }
+    .chart {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      height: 140px;
+      padding: 8px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    /* Close button for flash full screen */
+    .close-full {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 1.2rem;
+      line-height: 32px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    /* Custom image for penguin icon */
+    .pengu-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: var(--shadow);
+    }
+
+    /* Learn cards sized like flashcards */
+    .learn-card {
+      max-width: 820px;
+      margin: auto;
+    }
+    .bar {
+      width: 64px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-radius: 10px 10px 0 0;
+      position: relative;
+    }
+    .bar .label {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.8rem;
+      color: #555;
+      white-space: nowrap;
+    }
+    /* Memory match cards */
+    .match-grid {
+      display: grid;
+      gap: 8px;
+    }
+    .match-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      /* Allow cards to grow when content wraps */
+      /* Provide extra height so long terms/definitions fit within the card */
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: var(--shadow);
+      transition: background 0.2s;
+      padding: 8px;
+      text-align: center;
+      /* Standardize memory card font and allow wrapping of long text */
+      font-size: 1rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+    .match-card.revealed {
+      background: var(--accent3);
+    }
+    .match-card.matched {
+      background: var(--accent2);
+    }
+    /* --- Additional styles to harmonize font sizes across modes --- */
+    /* Test (Probar) area: moderate question and definition sizes */
+    #test-area .term {
+      font-size: 1.6rem;
+      text-align: left;
+      margin-bottom: 6px;
+    }
+    #test-area .def {
+      font-size: 1.1rem;
+    }
+    #test-area label {
+      font-size: 1rem;
+    }
+    #test-area .muted {
+      font-size: 1rem;
+    }
+    #test-area input[type="text"] {
+      font-size: 1rem;
+      padding: 6px 8px;
+    }
+    #test-area select,
+    #test-area option {
+      font-size: 1rem;
+    }
+    /* Combination (Combinar) area: adjust term and select sizes */
+    .comb-term {
+      font-size: 1.3rem;
+      line-height: 1.25;
+    }
+    #comb-area select {
+      font-size: 1rem;
+    }
+    #comb-area .row .muted {
+      font-size: 1rem;
+    }
+    /* Allow combination rows to wrap on small screens */
+    #comb-area .row {
+      flex-wrap: wrap;
+    }
+    #comb-area .row .comb-term,
+    #comb-area .row select {
+      flex: 1 1 100%;
+      margin-top: 4px;
+    }
+    @media (min-width: 600px) {
+      #comb-area .row .comb-term,
+      #comb-area .row select {
+        flex: 1 1 48%;
+      }
+    }
+    /* Pair (Parear) area: adjust button text size */
+    #pair-area .item {
+      font-size: 1.2rem;
+      padding: 6px 8px;
+    }
+    /* Learn cards: moderate fonts within learn mode */
+    .learn-card .term {
+      font-size: 1.6rem;
+      line-height: 1.3;
+    }
+    .learn-card .def {
+      font-size: 1.2rem;
+    }
+    .learn-card .item {
+      font-size: 1.2rem;
+    }
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.25);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+    }
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 720px;
+      width: 92%;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <!-- Confetti canvas for celebrations -->
+  <canvas id="confetti"></canvas>
+  <div class="container">
+    <header>
+      <div class="row" style="gap: 12px">
+        <div class="brand"><img src="penguin.png" alt="Pengu" class="pengu-img"><span>Pengu Quizlet</span></div>
+        <span class="pill">Sin internet · LocalStorage</span>
+      </div>
+      <div class="tabs">
+        <button id="nav-sets" class="primary">Sets</button>
+        <button id="nav-flash">Flashcards</button>
+        <button id="nav-learn">Learn</button>
+        <button id="nav-test">Probar</button>
+        <button id="nav-memory">Memorama</button>
+        <button id="nav-comb">Combinar</button>
+        <button id="nav-pair">Parear</button>
+        <button id="nav-import">Importar/Exportar</button>
+      </div>
+    </header>
+
+    <!-- Sets view -->
+    <section id="view-sets" class="panel">
+      <div class="row space-between">
+        <h3 class="section-title">Mis sets</h3>
+        <div class="row" style="gap: 8px">
+          <button id="btn-new-set">Nuevo set</button>
+          <button id="btn-clear" class="danger">Borrar todo</button>
+        </div>
+      </div>
+      <div id="sets-list" class="list"></div>
+    </section>
+
+    <!-- Flashcards view -->
+    <section id="view-flash" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Flashcards</h3>
+        <div class="row" style="gap: 6px; flex-wrap: wrap">
+          <select id="select-flash"></select>
+          <button id="flash-reverse" class="ghost" title="Intercambiar Term/Def">Term↔Def</button>
+          <button id="flash-shuffle" class="ghost" title="Aleatorizar">Aleatorio</button>
+        <button id="flash-auto" class="ghost" title="Activar auto-reproducción">Auto</button>
+        </div>
+      </div>
+      <div class="flash-wrap" id="flash-wrap">
+        <div class="flash-card" id="flash-card">
+          <div class="flash-inner" id="flash-inner">
+            <div class="flash-face flash-front"><div class="term" id="flash-front">—</div></div>
+            <div class="flash-face flash-back"><div class="def" id="flash-back">(haz clic o presiona espacio)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="row" id="flash-grade-row" style="gap: 10px; justify-content: center; margin-top: 10px">
+        <button id="flash-prev" class="ghost">⟵</button>
+        <button id="flash-show" class="primary">Voltear</button>
+        <button id="flash-next" class="ghost">⟶</button>
+      </div>
+      <p class="muted" style="text-align:center">Atajos: ← → · Espacio · Swipe para cambiar</p>
+    </section>
+
+    <!-- Learn view -->
+    <section id="view-learn" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Learn</h3>
+        <div class="row" style="gap: 6px; flex-wrap: wrap">
+          <select id="select-learn"></select>
+          <select id="learn-mode">
+            <option value="mix">Mixto</option>
+            <option value="mcq">Opción múltiple</option>
+            <option value="type">Escribir</option>
+            <option value="judge">Verdadero/Falso</option>
+          </select>
+          <select id="learn-direction" title="Dirección de práctica">
+            <option value="auto">Auto (mezclado)</option>
+            <option value="term">Escribir término (desde definición)</option>
+            <option value="def">Escribir definición (desde término)</option>
+          </select>
+          <button id="learn-reset" class="ghost">Reiniciar progreso</button>
+        </div>
+      </div>
+      <div id="learn-stage" class="grid" style="grid-template-columns: 1fr; gap: 12px"></div>
+      <div class="progress" style="margin-top:8px"><div id="learn-progress" style="width:0%"></div></div>
+      <div class="row" style="gap: 8px; margin-top: 8px"><span class="pill" id="learn-stats">—</span></div>
+    </section>
+
+    <!-- Test view -->
+    <section id="view-test" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Probar</h3>
+        <div class="row" style="gap: 6px; flex-wrap: wrap">
+          <select id="select-test"></select>
+          <label class="pill">Preguntas <input id="test-count" type="number" value="10" min="5" max="50" style="width:70px; margin-left:6px"></label>
+          <select id="test-mode">
+            <option value="balanced">Balanceado</option>
+            <option value="mcq">Solo opción múltiple</option>
+            <option value="tf">Solo V/F</option>
+            <option value="short">Solo respuesta corta</option>
+          </select>
+          <button id="test-generate" class="primary">Generar</button>
+        </div>
+      </div>
+      <div id="test-area" class="grid" style="grid-template-columns: 1fr; gap: 12px"></div>
+      <div id="test-actions" class="row" style="gap:10px; margin-top:8px; align-items:center">
+        <button id="test-grade" class="primary hidden">Calificar</button>
+        <button id="test-reset" class="ghost hidden">Nuevo</button>
+        <span class="pill" id="test-score"></span>
+      </div>
+      <div id="test-report" class="panel hidden" style="margin-top:12px">
+        <h4 style="margin:0 0 8px 0">Reporte</h4>
+        <div class="row" style="gap:12px; flex-wrap:wrap">
+          <span class="pill" id="rep-total">—</span>
+          <span class="pill" id="rep-mcq">—</span>
+          <span class="pill" id="rep-tf">—</span>
+          <span class="pill" id="rep-short">—</span>
+        </div>
+        <div class="chart" id="report-chart"></div>
+      </div>
+    </section>
+
+    <!-- Memory match view -->
+    <section id="view-match" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Memorama</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-match"></select>
+          <label class="pill">Pares <input id="match-count" type="number" value="8" min="2" style="width:60px; margin-left:6px"></label>
+          <button id="match-start" class="primary">Iniciar</button>
+        </div>
+      </div>
+      <div id="match-area" class="match-grid" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); margin-top:12px"></div>
+      <div id="match-info" class="row" style="gap:8px; margin-top:8px">
+        <span class="pill" id="match-moves">Movimientos: 0</span>
+        <span class="pill" id="match-progress">0/0</span>
+      </div>
+    </section>
+
+    <!-- Pair matching game (Parear) -->
+    <section id="view-pair" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Parear</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-pair"></select>
+          <label class="pill">Pares <input id="pair-count" type="number" value="5" min="2" style="width:60px; margin-left:6px"></label>
+          <button id="pair-start" class="primary">Iniciar</button>
+        </div>
+      </div>
+      <div id="pair-area" class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px"></div>
+      <div id="pair-info" class="row" style="gap:8px; margin-top:8px">
+        <span class="pill" id="pair-progress">0/0</span>
+      </div>
+    </section>
+
+    <!-- Combination game (Combinar) -->
+    <section id="view-comb" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Combinar</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-comb"></select>
+          <label class="pill">Pares <input id="comb-count" type="number" value="5" min="2" style="width:60px; margin-left:6px"></label>
+          <button id="comb-start" class="primary">Iniciar</button>
+        </div>
+      </div>
+      <div id="comb-area" class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px"></div>
+      <div id="comb-info" class="row" style="gap:8px; margin-top:8px">
+        <span class="pill" id="comb-progress">0/0</span>
+      </div>
+    </section>
+
+    <!-- Import/Export view -->
+    <section id="view-import" class="panel hidden">
+      <h3 class="section-title">Importar / Exportar</h3>
+      <div class="grid cols-2">
+        <div>
+          <h4>Importar CSV/JSON</h4>
+          <input type="file" id="file-input" accept=".csv,.json" />
+          <p class="muted">CSV con encabezados: set_title, term, definition, extra_notes, tags, lang_term, lang_definition, difficulty</p>
+          <button id="btn-import" class="primary" disabled>Importar</button>
+          <div id="import-preview" class="muted" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <h4>Exportar</h4>
+          <div class="row" style="gap:8px; flex-wrap:wrap">
+            <button id="btn-export-json">Exportar JSON</button>
+            <button id="btn-export-csv">Exportar CSV</button>
+            <button id="btn-backup" class="ghost">Respaldar (archivo .json)</button>
+          </div>
+        </div>
+      </div>
+      <hr style="border-color:var(--border); margin:16px 0" />
+      <h4>Datos en LocalStorage</h4>
+      <div class="row" style="gap:8px">
+        <span class="pill">Clave: <code style="font-family: ui-monospace">penguQuizlet:v5</code></span>
+        <button id="btn-dump" class="ghost">Ver JSON</button>
+        <button id="btn-restore" class="warn">Restaurar desde JSON</button>
+      </div>
+      <textarea id="dump-area" rows="8" style="width:100%; margin-top:8px; font-family: ui-monospace"></textarea>
+    </section>
+  </div>
+
+  <!-- Modal for creating new sets -->
+  <div class="scrim" id="scrim">
+    <div class="modal">
+      <h3>Nuevo set</h3>
+      <div class="grid">
+        <input id="new-title" placeholder="Título del set" />
+        <textarea id="new-desc" rows="2" placeholder="Descripción (opcional)"></textarea>
+      </div>
+      <div class="row" style="gap:8px; margin-top:10px; justify-content:flex-end">
+        <button id="modal-cancel" class="ghost">Cancelar</button>
+        <button id="modal-ok" class="primary">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for adding multiple cards -->
+  <div class="scrim" id="scrim-cards">
+    <div class="modal">
+      <h3>Añadir tarjetas</h3>
+      <div id="multi-form" class="list"></div>
+      <div class="row" style="gap:8px; margin-top:8px">
+        <button id="btn-add-row" class="ghost">Añadir fila</button>
+      </div>
+      <div class="row" style="gap:8px; margin-top:10px; justify-content:flex-end">
+        <button id="btn-cancel-cards" class="ghost">Cancelar</button>
+        <button id="btn-save-cards" class="primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // === Utility functions ===
+  const qs = sel => document.querySelector(sel);
+  const el = (tag, props = {}) => { const e = document.createElement(tag); Object.assign(e, props); return e; };
+  const nowISO = () => new Date().toISOString();
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+  // Robust CSV parser: returns array of rows, ignoring completely empty rows
+  function parseCSV(csv) {
+    const rows = [];
+    if (!csv) return rows;
+    const lines = csv.trim().split(/\r?\n/);
+    lines.forEach(line => {
+      const cells = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        const next = line[i + 1];
+        if (ch === '"' && next === '"') {
+          cell += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          cells.push(cell);
+          cell = '';
+        } else {
+          cell += ch;
+        }
+      }
+      cells.push(cell);
+      const trimmed = cells.map(c => (c || '').trim());
+      if (trimmed.some(c => c !== '')) rows.push(trimmed);
+    });
+    return rows;
+  }
+
+  // Confetti effect for positive feedback
+  (function(){
+    const canvas = qs('#confetti');
+    const ctx = canvas.getContext('2d');
+    let W = 0, H = 0, parts = [], running = false;
+    const colors = [ '#ff76b9', '#ffa6cf', '#ffd1e8', '#fff' ];
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    window.confettiLaunch = function(n = 120) {
+      for (let i = 0; i < n; i++) {
+        parts.push({
+          x: Math.random() * W,
+          y: -10,
+          size: 6 + Math.random() * 6,
+          vy: 2 + Math.random() * 2,
+          vx: (Math.random() - 0.5) * 2,
+          rot: Math.random() * 6.28,
+          color: colors[i % colors.length]
+        });
+      }
+      if (!running) {
+        running = true;
+        requestAnimationFrame(loop);
+      }
+      setTimeout(() => {
+        parts = [];
+        running = false;
+        ctx.clearRect(0, 0, W, H);
+      }, 1200);
+    };
+    function loop() {
+      if (!running) return;
+      ctx.clearRect(0, 0, W, H);
+      parts.forEach(p => {
+        p.y += p.vy;
+        p.x += p.vx;
+        p.rot += 0.1;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      });
+      requestAnimationFrame(loop);
+    }
+  })();
+
+  // === Storage layer ===
+  const STORAGE_KEY = 'penguQuizlet:v5';
+  let db = { sets: {}, items: {}, progress: {} };
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        db.sets = parsed.sets || {};
+        db.items = parsed.items || {};
+        db.progress = parsed.progress || {};
+      }
+    } catch (e) {
+      console.warn('Load failed', e);
+    }
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+  function uuid() {
+    return 'xxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16));
+  }
+
+  // === State ===
+  let currentSet = null;
+  let flashState = { order: [], index: 0, reversed: false };
+  let currentTest = null;
+  let matchState = null;
+
+  // Autoplay state for flashcards
+  let flashAuto = false;
+  let flashAutoTimer = null;
+  let flashAutoFlipped = false;
+
+  // Timer for learn feedback delay
+  let learnTimer = null;
+
+  // Pair and combination games state
+  let pairState = null;
+  let combState = null;
+
+  // Multi-card modal state
+  let multiSetId = null;
+
+  // === Render sets and progress ===
+  function renderSetProgress(setId) {
+    const items = db.items[setId] || [];
+    const prog = db.progress[setId] || {};
+    const mastered = items.filter(it => (prog[it.id] && prog[it.id].bucket >= 5)).length;
+    if (!items.length) return '';
+    const mastery = prog.mastery != null ? prog.mastery : 0;
+    return `${mastered}/${items.length} dominadas · ${mastery}% dominio`;
+  }
+  function renderSets() {
+    const list = qs('#sets-list');
+    list.innerHTML = '';
+    const ids = Object.keys(db.sets);
+    if (!ids.length) {
+      list.appendChild(el('div', { className: 'muted', innerText: 'Aún no tienes sets. Importa un CSV/JSON o crea uno nuevo.' }));
+      return;
+    }
+    ids.forEach(id => {
+      const s = db.sets[id];
+      const items = db.items[id] || [];
+      const row = el('div', { className: 'item' });
+      const top = el('div', { className: 'row space-between' });
+      const left = el('div');
+      const prog = renderSetProgress(id);
+      left.innerHTML = `<strong>${s.title}</strong> <span class="muted">(${items.length} tarjetas)</span>` + (prog ? ` <span class="pill" style="margin-left:4px">${prog}</span>` : '');
+      top.appendChild(left);
+      const actions = el('div', { className: 'row', style: 'gap:8px; flex-wrap:wrap' });
+      const btnStudy = el('button', { innerText: 'Abrir' });
+      btnStudy.onclick = () => { currentSet = id; syncSelectors(); switchView('flash'); initFlash(); };
+      const btnEdit = el('button', { innerText: 'Añadir tarjeta', className: 'ghost' });
+      btnEdit.onclick = () => { addCardPrompt(id); };
+      const btnDelete = el('button', { innerText: 'Eliminar', className: 'danger' });
+      btnDelete.onclick = () => {
+        if (confirm('¿Eliminar set y tarjetas?')) {
+          delete db.sets[id];
+          delete db.items[id];
+          delete db.progress[id];
+          save();
+          renderAll();
+        }
+      };
+      actions.appendChild(btnStudy);
+      actions.appendChild(btnEdit);
+      actions.appendChild(btnDelete);
+      top.appendChild(actions);
+      row.appendChild(top);
+      if (s.description) row.appendChild(el('div', { className: 'muted', innerText: s.description }));
+      list.appendChild(row);
+    });
+  }
+
+  // === Sync selectors ===
+  function syncSelectors() {
+    let options = '';
+    Object.values(db.sets).forEach(s => {
+      options += `<option value="${s.id}"${s.id === currentSet ? ' selected' : ''}>${s.title}</option>`;
+    });
+    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb'].forEach(id => {
+      const select = qs('#' + id);
+      select.innerHTML = options;
+    });
+  }
+
+  // === Flashcards ===
+  function initFlash() {
+    const sel = qs('#select-flash');
+    const setId = sel.value || currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    flashState.order = items.map((_, i) => i);
+    flashState.index = 0;
+    renderFlash();
+  }
+  function renderFlash() {
+    const items = db.items[currentSet] || [];
+    const inner = qs('#flash-inner');
+    if (!items.length) {
+      qs('#flash-front').innerText = '(vacío)';
+      qs('#flash-back').innerText = 'Agrega tarjetas';
+      return;
+    }
+    const i = flashState.order[flashState.index];
+    const it = items[i];
+    const front = flashState.reversed ? it.definition : it.term;
+    const back = flashState.reversed ? it.term : it.definition;
+    qs('#flash-front').innerText = front;
+    qs('#flash-back').innerText = back;
+    inner.classList.remove('flipped');
+  }
+  function flashFlip() {
+    qs('#flash-inner').classList.toggle('flipped');
+  }
+  function flashPrev() {
+    const len = flashState.order.length;
+    if (!len) return;
+    flashState.index = (flashState.index - 1 + len) % len;
+    renderFlash();
+  }
+  function flashNext() {
+    const len = flashState.order.length;
+    if (!len) return;
+    flashState.index = (flashState.index + 1) % len;
+    renderFlash();
+  }
+  function handleTouchStart(e) { window._sx = e.touches[0].clientX; }
+  function handleTouchMove(e) { window._dx = e.touches[0].clientX - window._sx; }
+  function handleTouchEnd() {
+    if (Math.abs(window._dx) > 60) {
+      if (window._dx > 0) flashPrev(); else flashNext();
+    }
+    window._dx = 0;
+  }
+
+  // === Learn (adaptive) ===
+  const BASE_INTERVALS = [0, 1, 3, 7, 14];
+  function ensureProgress(setId) {
+    db.progress[setId] = db.progress[setId] || {};
+    (db.items[setId] || []).forEach(it => {
+      if (!db.progress[setId][it.id]) {
+        db.progress[setId][it.id] = {
+          ef: 2.3,
+          bucket: 1,
+          seen: 0,
+          correct: 0,
+          streak: 0,
+          lastSeen: null,
+          nextDue: null
+        };
+      }
+    });
+  }
+  function pickLearnItem(setId) {
+    ensureProgress(setId);
+    const items = db.items[setId] || [];
+    const p = db.progress[setId];
+    const nowT = Date.now();
+    const due = [], fresh = [], rest = [];
+    items.forEach(it => {
+      const pr = p[it.id];
+      const dueAt = pr.nextDue ? new Date(pr.nextDue).getTime() : 0;
+      if (!pr.seen) fresh.push(it);
+      else if (!pr.nextDue || nowT >= dueAt) due.push(it);
+      else rest.push(it);
+    });
+    const pool = due.length ? due : (fresh.length ? fresh : rest);
+    if (!pool.length) return null;
+    const it = pool[Math.floor(Math.random() * pool.length)];
+    return buildLearnQuestion(it);
+  }
+  function buildLearnQuestion(item) {
+    const modeSel = qs('#learn-mode').value;
+    const dirSel = qs('#learn-direction').value;
+    const kind = modeSel === 'mix' ? ['mcq','type','judge'][Math.floor(Math.random() * 3)] : modeSel;
+    const setItems = db.items[currentSet] || [];
+    const q = { id: item.id, kind: kind, prompt: item.term, answer: item.definition, choices: [], direction: 'def' };
+    if (dirSel === 'term') {
+      q.prompt = item.definition;
+      q.answer = item.term;
+      q.direction = 'term';
+    } else if (dirSel === 'auto') {
+      if (Math.random() < 0.5) {
+        q.prompt = item.term;
+        q.answer = item.definition;
+        q.direction = 'def';
+      } else {
+        q.prompt = item.definition;
+        q.answer = item.term;
+        q.direction = 'term';
+      }
+    }
+    if (kind === 'mcq') {
+      const pool = setItems.filter(x => x.id !== item.id).slice().sort(() => Math.random() - 0.5).slice(0, 3).map(x => (q.direction === 'term' ? x.term : x.definition));
+      const correct = q.answer;
+      const ch = [correct].concat(pool).sort(() => Math.random() - 0.5);
+      q.choices = ch;
+      q.correctIndex = ch.indexOf(correct);
+    }
+    if (kind === 'judge') {
+      const showCorrect = Math.random() < 0.5;
+      const other = setItems[Math.floor(Math.random() * setItems.length)];
+      const shown = showCorrect ? q.answer : (q.direction === 'term' ? other.term : other.definition);
+      q.shown = shown;
+      q.truth = (shown === q.answer);
+    }
+    return q;
+  }
+  function gradeLearn(itemId, quality) {
+    const pr = db.progress[currentSet][itemId];
+    pr.seen++;
+    pr.lastSeen = nowISO();
+    if (quality >= 4) {
+      pr.correct++;
+      pr.streak++;
+      pr.bucket = clamp(pr.bucket + 1, 1, 5);
+      pr.ef = Math.max(1.3, pr.ef + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    } else {
+      pr.streak = 0;
+      pr.bucket = clamp(pr.bucket - 1, 1, 5);
+      pr.ef = Math.max(1.3, pr.ef - 0.15);
+    }
+    const base = BASE_INTERVALS[pr.bucket - 1];
+    const days = base * (pr.ef / 2.3);
+    pr.nextDue = new Date(Date.now() + days * 24 * 3600 * 1000).toISOString();
+    save();
+
+    // Update mastery score for the current set after grading
+    computeMastery(currentSet);
+  }
+
+  // Compute mastery for a set based on spaced repetition progress and test scores
+  function computeMastery(setId) {
+    if (!setId) return;
+    const items = db.items[setId] || [];
+    const p = db.progress[setId] || {};
+    // average bucket progress (1-5)
+    let sumBuckets = 0;
+    items.forEach(it => {
+      const pr = p[it.id] || { bucket: 1 };
+      sumBuckets += pr.bucket;
+    });
+    const learnScore = items.length ? sumBuckets / (5 * items.length) : 0;
+    // average test scores stored in progress
+    const tests = p.tests || [];
+    let testScore = 0;
+    if (tests.length) {
+      let sum = 0;
+      tests.forEach(t => { sum += t.score; });
+      testScore = (sum / tests.length) / 100;
+    }
+    // Weighted mastery: 60% learn progress + 40% test average
+    const mastery = Math.round((learnScore * 0.6 + testScore * 0.4) * 100);
+    p.mastery = mastery;
+    db.progress[setId] = p;
+    save();
+  }
+  function renderLearn() {
+    const setId = qs('#select-learn').value || currentSet;
+    const area = qs('#learn-stage');
+    if (!setId) {
+      area.innerHTML = '';
+      qs('#learn-progress').style.width = '0%';
+      qs('#learn-stats').innerText = 'Sin tarjetas';
+      return;
+    }
+    currentSet = setId;
+    ensureProgress(setId);
+    const items = db.items[setId] || [];
+    const p = db.progress[setId] || {};
+    // Compute progress: consider an item learned when it has advanced to at least bucket 3.
+    let learned = 0;
+    items.forEach(it => {
+      const pr = p[it.id];
+      // Count as learned when the item reaches bucket >=2 (at least one correct attempt)
+      if (pr && pr.bucket >= 2) learned++;
+    });
+    const pct = items.length ? Math.round(100 * learned / items.length) : 0;
+    qs('#learn-progress').style.width = pct + '%';
+    qs('#learn-stats').innerText = items.length ? `${learned}/${items.length} aprendidas` : 'Sin tarjetas';
+    const q = pickLearnItem(setId);
+    area.innerHTML = '';
+    if (!q) {
+      area.appendChild(el('div', { className: 'muted', innerText: 'No hay elementos para practicar.' }));
+      return;
+    }
+    // Cancel any pending delay
+    if (learnTimer) { clearTimeout(learnTimer); learnTimer = null; }
+    currentLearnQ = q;
+    // Render question card depending on type
+    if (q.kind === 'mcq') {
+      const card = el('div', { className: 'item learn-card' });
+      card.appendChild(el('div', { className: 'term', innerText: q.prompt }));
+      q.choices.forEach((c, idx) => {
+        const b = el('button', { className: 'item', style:'display:block;width:100%;text-align:left;margin-top:4px;', innerText: c });
+        b.onclick = () => {
+          const correct = (idx === q.correctIndex);
+          handleLearnAnswer(correct, q);
+        };
+        card.appendChild(b);
+      });
+      area.appendChild(card);
+    } else if (q.kind === 'type') {
+      const card2 = el('div', { className: 'item learn-card' });
+      const label = q.direction === 'term' ? 'Escribe el TÉRMINO: ' : 'Escribe la DEFINICIÓN: ';
+      card2.appendChild(el('div', { className: 'term', innerText: label + q.prompt }));
+      const inp = el('input', { placeholder: q.direction === 'term' ? 'Término...' : 'Definición...', style:'margin-top:8px' });
+      const res = el('div', { className: 'muted', style:'margin-top:8px' });
+      const btn = el('button', { className: 'primary', innerText: 'Comprobar', style:'margin-top:8px' });
+      btn.onclick = () => {
+        // prevent multiple submissions
+        if (btn.disabled) return;
+        btn.disabled = true;
+        inp.disabled = true;
+        const guess = (inp.value || '').trim().toLowerCase();
+        const ans = (q.answer || '').trim().toLowerCase();
+        const ok = levenshtein(guess, ans) <= Math.max(1, Math.floor(ans.length * 0.1));
+        res.innerText = ok ? '✓ Correcto' : `✗ Incorrecto. Resp.: ${q.answer}`;
+        handleLearnAnswer(ok, q);
+      };
+      card2.appendChild(inp);
+      card2.appendChild(btn);
+      card2.appendChild(res);
+      area.appendChild(card2);
+    } else if (q.kind === 'judge') {
+      const card3 = el('div', { className: 'item learn-card' });
+      card3.appendChild(el('div', { className: 'term', innerText: q.prompt }));
+      card3.appendChild(el('div', { className: 'def', innerText: q.shown, style:'margin-top:6px' }));
+      const row = el('div', { className: 'row', style:'gap:8px;margin-top:8px' });
+      const b1 = el('button', { className: 'primary', innerText:'Verdadero' });
+      b1.onclick = () => {
+        const ok = q.truth;
+        handleLearnAnswer(ok, q);
+      };
+      const b2 = el('button', { className:'ghost', innerText:'Falso' });
+      b2.onclick = () => {
+        const ok = !q.truth;
+        handleLearnAnswer(ok, q);
+      };
+      row.appendChild(b1);
+      row.appendChild(b2);
+      card3.appendChild(row);
+      area.appendChild(card3);
+    }
+  }
+
+  // Current learn question reference
+  let currentLearnQ = null;
+  // Handle learn answer: grade, feedback, delay and next button
+  function handleLearnAnswer(isCorrect, q) {
+    // grade the item
+    gradeLearn(q.id, isCorrect ? 5 : 2);
+    if (isCorrect) window.confettiLaunch(140);
+    // Build feedback area
+    const area = qs('#learn-stage');
+    const feedback = el('div', { className:'muted', style:'margin-top:12px' });
+    feedback.innerText = isCorrect ? '✓ Correcto' : `✗ Incorrecto. Resp.: ${q.answer}`;
+    area.appendChild(feedback);
+    // Create next button
+    const nextBtn = el('button', { className:'ghost', innerText:'Siguiente', style:'margin-top:8px' });
+    nextBtn.onclick = () => {
+      clearTimeout(learnTimer);
+      learnTimer = null;
+      renderLearn();
+    };
+    area.appendChild(nextBtn);
+    // Schedule auto-advance in 10 seconds
+    learnTimer = setTimeout(() => {
+      learnTimer = null;
+      renderLearn();
+    }, 10000);
+  }
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    const an = a.length, bn = b.length;
+    if (!an) return bn;
+    if (!bn) return an;
+    const arr = new Array(bn + 1);
+    for (let i = 0; i <= bn; i++) arr[i] = i;
+    for (let i = 1; i <= an; i++) {
+      let prev = i;
+      for (let j = 1; j <= bn; j++) {
+        const tmp = arr[j];
+        const val = a.charAt(i - 1) === b.charAt(j - 1) ? arr[j - 1] : Math.min(arr[j - 1] + 1, prev + 1, arr[j] + 1);
+        arr[j] = val;
+        prev = tmp;
+      }
+      arr[0] = i;
+    }
+    return arr[bn];
+  }
+
+  // === Test/Probar ===
+  function genTest() {
+    const setId = qs('#select-test').value || currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    const n = clamp(parseInt(qs('#test-count').value || '10', 10), 5, 50);
+    const mix = qs('#test-mode').value;
+    if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
+    const kinds = (mix === 'balanced') ? ['mcq','tf','short'] : (mix === 'mcq' ? ['mcq'] : (mix === 'tf' ? ['tf'] : ['short']));
+    const qsArr = [];
+    for (let i = 0; i < n; i++) {
+      const it = items[Math.floor(Math.random() * items.length)];
+      const kind = kinds[i % kinds.length];
+      if (kind === 'mcq') {
+        const pool = items.filter(x => x.id !== it.id).slice().sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.definition);
+        const ch = [it.definition].concat(pool).sort(() => Math.random() - 0.5);
+        qsArr.push({ kind:'mcq', prompt: it.term, choices: ch, answer: it.definition, correctIndex: ch.indexOf(it.definition) });
+      } else if (kind === 'tf') {
+        const other = items[Math.floor(Math.random() * items.length)].definition;
+        const truth = Math.random() < 0.5;
+        const shown = truth ? it.definition : other;
+        qsArr.push({ kind:'tf', prompt: it.term, shown: shown, truth: truth });
+      } else {
+        // For respuesta corta, mostrar definición y esperar el término
+        qsArr.push({ kind:'short', prompt: it.definition, answer: it.term });
+      }
+    }
+    currentTest = { setId: setId, qs: qsArr, answers: [], graded: false, score: null };
+    renderTest();
+  }
+  function renderTest() {
+    const area = qs('#test-area');
+    area.innerHTML = '';
+    qs('#test-report').classList.add('hidden');
+    if (!currentTest) {
+      qs('#test-grade').classList.add('hidden');
+      qs('#test-reset').classList.add('hidden');
+      qs('#test-score').innerText = '';
+      return;
+    }
+    currentTest.qs.forEach((q, idx) => {
+      const card = el('div', { className: 'item' });
+      card.id = 'qcard_' + idx;
+      card.appendChild(el('div', { className: 'term', innerText: `${idx + 1}. ${q.prompt}` }));
+      if (q.kind === 'mcq') {
+        q.choices.forEach((c, i) => {
+          const id = `q${idx}_c${i}`;
+          const row = el('div', { className: 'row', style: 'gap:6px' });
+          const input = el('input', { type:'radio', name:'q' + idx, id:id });
+          input.onchange = () => { currentTest.answers[idx] = { type:'mcq', value:i }; };
+          const label = el('label', { htmlFor:id, innerText: c });
+          row.appendChild(input);
+          row.appendChild(label);
+          card.appendChild(row);
+        });
+      } else if (q.kind === 'tf') {
+        ['Verdadero','Falso'].forEach((lab,i) => {
+          const id = `q${idx}_tf${i}`;
+          const row = el('div', { className: 'row', style: 'gap:6px' });
+          const input = el('input', { type:'radio', name:'q' + idx, id:id });
+          input.onchange = () => { currentTest.answers[idx] = { type:'tf', value:(i === 0) }; };
+          const label = el('label', { htmlFor:id, innerText: lab });
+          row.appendChild(input);
+          row.appendChild(label);
+          card.appendChild(row);
+        });
+        card.appendChild(el('div', { className: 'def', innerText: 'Definición mostrada: ' + q.shown }));
+      } else {
+        const inp = el('input', { placeholder:'Respuesta corta' });
+        inp.oninput = () => { currentTest.answers[idx] = { type:'short', value: inp.value }; };
+        card.appendChild(inp);
+      }
+      area.appendChild(card);
+    });
+    qs('#test-grade').classList.remove('hidden');
+    qs('#test-reset').classList.add('hidden');
+    qs('#test-score').innerText = '';
+  }
+  function gradeTest() {
+    let correct = 0;
+    const byType = { mcq:{ ok:0, all:0 }, tf:{ ok:0, all:0 }, short:{ ok:0, all:0 } };
+    ensureProgress(currentSet);
+    const items = db.items[currentSet] || [];
+    currentTest.qs.forEach((q,i) => {
+      const ans = currentTest.answers[i];
+      let ok = false;
+      if (q.kind === 'mcq') {
+        byType.mcq.all++;
+        ok = ans && q.correctIndex === ans.value;
+      } else if (q.kind === 'tf') {
+        byType.tf.all++;
+        ok = ans && ans.value === !!q.truth;
+      } else {
+        byType.short.all++;
+        const guess = (ans ? ans.value : '').trim().toLowerCase();
+        const real = (q.answer || '').trim().toLowerCase();
+        ok = levenshtein(guess, real) <= Math.max(1, Math.floor(real.length * 0.1));
+      }
+      if (ok) {
+        correct++;
+        byType[q.kind].ok++;
+      }
+      const card = qs('#qcard_' + i);
+      if (ok) card.classList.add('correct'); else card.classList.add('incorrect');
+      const info = el('div', { className:'muted' });
+      if (q.kind === 'mcq') {
+        info.innerText = 'Respuesta correcta: ' + q.answer;
+      } else if (q.kind === 'tf') {
+        info.innerText = 'Era ' + (q.truth ? 'Verdadero' : 'Falso');
+      } else {
+        info.innerText = 'Respuesta correcta: ' + q.answer;
+      }
+      card.appendChild(info);
+      const item = items.find(x => x.term === q.prompt);
+      if (item) gradeLearn(item.id, ok ? 5 : 2);
+    });
+    const score = Math.round(100 * correct / currentTest.qs.length);
+    currentTest.graded = true;
+    currentTest.score = score;
+    // Store test score in progress for mastery computation
+    const pr = db.progress[currentSet] || {};
+    pr.tests = pr.tests || [];
+    pr.tests.push({ score: score, date: nowISO() });
+    // keep only last 5 tests
+    if (pr.tests.length > 5) pr.tests.shift();
+    db.progress[currentSet] = pr;
+    save();
+    qs('#test-score').innerText = `Puntaje: ${score}% (${correct}/${currentTest.qs.length})`;
+    qs('#test-grade').classList.add('hidden');
+    qs('#test-reset').classList.remove('hidden');
+    qs('#test-report').classList.remove('hidden');
+    // Update mastery based on new test
+    computeMastery(currentSet);
+    function pct(t) { return t.all ? Math.round(100 * t.ok / t.all) : 0; }
+    qs('#rep-total').innerText = 'Total: ' + score + '%';
+    qs('#rep-mcq').innerText = 'MCQ: ' + pct(byType.mcq) + '% (' + byType.mcq.ok + '/' + byType.mcq.all + ')';
+    qs('#rep-tf').innerText = 'V/F: ' + pct(byType.tf) + '% (' + byType.tf.ok + '/' + byType.tf.all + ')';
+    qs('#rep-short').innerText = 'Corta: ' + pct(byType.short) + '% (' + byType.short.ok + '/' + byType.short.all + ')';
+    renderChart({ mcq:pct(byType.mcq), tf:pct(byType.tf), short:pct(byType.short) });
+    if (score >= 80) window.confettiLaunch(180);
+  }
+  function renderChart(data) {
+    const chart = qs('#report-chart');
+    chart.innerHTML = '';
+    const max = 100;
+    function addBar(label, val) {
+      const h = (val / max) * 120 + 10;
+      const bar = el('div', { className:'bar' });
+      bar.style.height = h + 'px';
+      const cap = el('div', { className:'label', innerText: label.toUpperCase() + ': ' + val + '%' });
+      bar.appendChild(cap);
+      chart.appendChild(bar);
+    }
+    addBar('mcq', data.mcq);
+    addBar('v/f', data.tf);
+    addBar('corta', data.short);
+  }
+
+  // === Match / Memorama ===
+  function startMatch() {
+    const setId = qs('#select-match').value || currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
+    // Determine number of pairs to use
+    const countInput = qs('#match-count');
+    let count = items.length;
+    if (countInput) {
+      const v = parseInt(countInput.value);
+      if (!isNaN(v) && v > 0) count = Math.min(v, items.length);
+    }
+    // Select random subset of items
+    const selected = items.slice().sort(() => Math.random() - 0.5).slice(0, count);
+    const pairs = [];
+    selected.forEach(it => {
+      pairs.push({ type:'term', text: it.term, id: it.id });
+      pairs.push({ type:'def', text: it.definition, id: it.id });
+    });
+    // Shuffle pairs
+    pairs.sort(() => Math.random() - 0.5);
+    matchState = { moves: 0, matched: 0, opened: [], pairs: pairs };
+    renderMatch();
+  }
+  function renderMatch() {
+    if (!matchState) return;
+    const grid = qs('#match-area');
+    grid.innerHTML = '';
+    qs('#match-moves').innerText = 'Movimientos: ' + matchState.moves;
+    qs('#match-progress').innerText = matchState.matched + '/' + matchState.pairs.length;
+    matchState.pairs.forEach((p, idx) => {
+      const card = el('div', { className:'match-card' });
+      card.dataset.index = idx;
+      if (matchState.opened.includes(idx) || p.matched) {
+        card.classList.add(p.matched ? 'matched' : 'revealed');
+        card.innerText = p.text;
+      } else {
+        card.innerText = '?';
+      }
+      card.onclick = () => {
+        if (p.matched || matchState.opened.includes(idx)) return;
+        matchState.opened.push(idx);
+        if (matchState.opened.length === 2) {
+          matchState.moves++;
+          const first = matchState.opened[0];
+          const second = matchState.opened[1];
+          if (matchState.pairs[first].id === matchState.pairs[second].id && matchState.pairs[first].type !== matchState.pairs[second].type) {
+            matchState.pairs[first].matched = true;
+            matchState.pairs[second].matched = true;
+            matchState.matched += 2;
+            if (matchState.matched === matchState.pairs.length) window.confettiLaunch(200);
+            // grade matched item as correct once
+            gradeLearn(matchState.pairs[first].id, 5);
+          }
+          setTimeout(() => { matchState.opened = []; renderMatch(); }, 650);
+        }
+        renderMatch();
+      };
+      grid.appendChild(card);
+    });
+  }
+
+  // === Pair (Parear) game ===
+  function startPair() {
+    const setId = qs('#select-pair').value || currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
+    let count = items.length;
+    const input = qs('#pair-count');
+    if (input) {
+      const v = parseInt(input.value);
+      if (!isNaN(v) && v > 0) count = Math.min(v, items.length);
+    }
+    const selected = items.slice().sort(() => Math.random() - 0.5).slice(0, count);
+    pairState = {
+      items: selected,
+      left: selected.map(it => ({ id: it.id, text: it.term })),
+      right: selected.map(it => ({ id: it.id, text: it.definition })),
+      matches: [],
+      chosen: null
+    };
+    // Shuffle both columns
+    pairState.left.sort(() => Math.random() - 0.5);
+    pairState.right.sort(() => Math.random() - 0.5);
+    renderPair();
+  }
+  function renderPair() {
+    const area = qs('#pair-area');
+    if (!pairState) { area.innerHTML = ''; return; }
+    area.innerHTML = '';
+    const total = pairState.items.length;
+    const matchedCount = pairState.matches.length;
+    qs('#pair-progress').innerText = `${matchedCount}/${total}`;
+    const leftCol = el('div');
+    const rightCol = el('div');
+    pairState.left.forEach(item => {
+      const btn = el('button', { className:'item', style:'display:block;width:100%;margin-bottom:6px;', innerText:item.text });
+      if (pairState.matches.includes(item.id)) {
+        btn.disabled = true;
+        btn.classList.add('correct');
+      }
+      if (pairState.chosen && pairState.chosen.id === item.id && pairState.chosen.side === 'left') {
+        btn.classList.add('primary');
+      }
+      btn.onclick = () => {
+        if (pairState.matches.includes(item.id)) return;
+        pairState.chosen = { id:item.id, side:'left', text:item.text };
+        renderPair();
+      };
+      leftCol.appendChild(btn);
+    });
+    pairState.right.forEach(item => {
+      const btn = el('button', { className:'item', style:'display:block;width:100%;margin-bottom:6px;', innerText:item.text });
+      if (pairState.matches.includes(item.id)) {
+        btn.disabled = true;
+        btn.classList.add('correct');
+      }
+      if (pairState.chosen && pairState.chosen.id === item.id && pairState.chosen.side === 'right') {
+        btn.classList.add('primary');
+      }
+      btn.onclick = () => {
+        if (pairState.matches.includes(item.id)) return;
+        // If no left selected yet, select this right
+        if (!pairState.chosen || pairState.chosen.side !== 'left') {
+          pairState.chosen = { id:item.id, side:'right', text:item.text };
+          renderPair();
+          return;
+        }
+        // Evaluate match
+        const leftSel = pairState.chosen;
+        const rightSel = { id:item.id, side:'right', text:item.text };
+        if (leftSel.id === rightSel.id) {
+          // correct
+          pairState.matches.push(leftSel.id);
+          gradeLearn(leftSel.id, 5);
+          window.confettiLaunch(140);
+        } else {
+          // incorrect
+          gradeLearn(leftSel.id, 2);
+          gradeLearn(rightSel.id, 2);
+        }
+        pairState.chosen = null;
+        // Update mastery
+        computeMastery(currentSet);
+        renderPair();
+        // Check completion
+        if (pairState.matches.length === total) {
+          window.confettiLaunch(200);
+        }
+      };
+      rightCol.appendChild(btn);
+    });
+    const grid = el('div', { className:'grid', style:'grid-template-columns:1fr 1fr; gap:12px;' });
+    grid.appendChild(leftCol);
+    grid.appendChild(rightCol);
+    area.appendChild(grid);
+  }
+
+  // === Combination (Combinar) game ===
+  function startComb() {
+    const setId = qs('#select-comb').value || currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
+    let count = items.length;
+    const inp = qs('#comb-count');
+    if (inp) {
+      const v = parseInt(inp.value);
+      if (!isNaN(v) && v > 0) count = Math.min(v, items.length);
+    }
+    const selected = items.slice().sort(() => Math.random() - 0.5).slice(0, count);
+    combState = { items:selected };
+    renderComb();
+  }
+  function renderComb() {
+    const area = qs('#comb-area');
+    if (!combState) { area.innerHTML = ''; return; }
+    area.innerHTML = '';
+    qs('#comb-progress').innerText = `0/${combState.items.length}`;
+    combState.items.forEach((it, idx) => {
+      const row = el('div', { className:'row', style:'gap:8px; align-items:center; margin-bottom:6px;' });
+      // Use a dedicated class for combination terms to avoid oversized fonts
+      const term = el('div', { className:'comb-term', style:'flex:1;', innerText: it.term });
+      const select = el('select', { style:'flex:1;' });
+      select.appendChild(el('option', { value:'', innerText:'Seleccione...' }));
+      // get definitions list and shuffle
+      const defs = combState.items.slice().map(x => x.definition).sort(() => Math.random() - 0.5);
+      defs.forEach(d => {
+        const opt = el('option', { value:d, innerText:d });
+        select.appendChild(opt);
+      });
+      row.appendChild(term);
+      row.appendChild(select);
+      area.appendChild(row);
+    });
+    const gradeBtn = el('button', { className:'primary', innerText:'Calificar', style:'margin-top:8px' });
+    gradeBtn.onclick = gradeComb;
+    area.appendChild(gradeBtn);
+  }
+  function gradeComb() {
+    const area = qs('#comb-area');
+    const rows = Array.from(area.children).filter(ch => ch.tagName !== 'BUTTON');
+    let correctCount = 0;
+    rows.forEach((row, idx) => {
+      const item = combState.items[idx];
+      const select = row.querySelector('select');
+      const chosen = select.value;
+      const correctDef = item.definition;
+      if (chosen === correctDef) {
+        correctCount++;
+        row.classList.add('correct');
+        gradeLearn(item.id, 5);
+      } else {
+        row.classList.add('incorrect');
+        const ans = el('div', { className:'muted', innerText:`Correcto: ${correctDef}`, style:'margin-left:8px' });
+        row.appendChild(ans);
+        gradeLearn(item.id, 2);
+      }
+      select.disabled = true;
+    });
+    qs('#comb-progress').innerText = `${correctCount}/${combState.items.length}`;
+    const btn = area.querySelector('button.primary');
+    if (btn) btn.disabled = true;
+    computeMastery(currentSet);
+    if (correctCount === combState.items.length) window.confettiLaunch(200);
+  }
+
+  // === Import/Export ===
+  let importRows = [];
+  qs('#file-input').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const txt = reader.result;
+      importRows = [];
+      if (/\.json$/i.test(f.name)) {
+        try {
+          const arr = JSON.parse(txt);
+          if (Array.isArray(arr)) importRows = arr;
+        } catch (err) { alert('JSON inválido'); }
+      } else {
+        const rows = parseCSV(txt);
+        if (!rows.length) { alert('CSV vacío'); return; }
+        const headers = rows.shift().map(h => h.toLowerCase());
+        function idx(name) { return headers.indexOf(name); }
+        rows.forEach(r => {
+          const rec = {
+            set_title: r[idx('set_title')] || '',
+            term: r[idx('term')] || '',
+            definition: r[idx('definition')] || '',
+            extra_notes: r[idx('extra_notes')] || '',
+            tags: (r[idx('tags')] || '').split(',').map(x => x.trim()).filter(x => !!x),
+            lang_term: r[idx('lang_term')] || '',
+            lang_definition: r[idx('lang_definition')] || '',
+            difficulty: r[idx('difficulty')] || ''
+          };
+          if (rec.term && rec.definition) importRows.push(rec);
+        });
+      }
+      qs('#import-preview').innerText = 'Listas ' + importRows.length + ' filas válidas.';
+      qs('#btn-import').disabled = !importRows.length;
+    };
+    reader.readAsText(f);
+  });
+  qs('#btn-import').addEventListener('click', () => {
+    const groups = {};
+    importRows.forEach(r => {
+      const t = r.set_title || 'Mi Set';
+      groups[t] = groups[t] || [];
+      groups[t].push(r);
+    });
+    Object.keys(groups).forEach(title => {
+      let found = null;
+      Object.values(db.sets).forEach(s => { if (s.title === title) found = s.id; });
+      let setId = found;
+      if (!setId) {
+        setId = uuid();
+        db.sets[setId] = { id:setId, title:title, description:'', createdAt:nowISO(), updatedAt:nowISO() };
+        db.items[setId] = [];
+      }
+      groups[title].forEach(r => {
+        const exists = (db.items[setId] || []).some(x => x.term === r.term && x.definition === r.definition);
+        if (!exists) {
+          db.items[setId].push({ id:uuid(), term:r.term.trim(), definition:r.definition.trim(), extra_notes:r.extra_notes || '', tags:r.tags || [], difficulty: r.difficulty ? Number(r.difficulty) : null });
+        }
+      });
+      db.sets[setId].updatedAt = nowISO();
+    });
+    save();
+    renderAll();
+    alert('Importación completada.');
+  });
+  qs('#btn-export-json').addEventListener('click', () => {
+    download('pengu_export.json', JSON.stringify(db, null, 2));
+  });
+  qs('#btn-export-csv').addEventListener('click', () => {
+    const rows = [ [ 'set_title','term','definition','extra_notes','tags','lang_term','lang_definition','difficulty' ] ];
+    Object.values(db.sets).forEach(s => {
+      (db.items[s.id] || []).forEach(it => {
+        rows.push([ s.title, it.term, it.definition, it.extra_notes || '', (it.tags || []).join(','), '', '', it.difficulty || '' ]);
+      });
+    });
+    const csv = rows.map(row => row.map(val => {
+      const s = String(val == null ? '' : val);
+      return (s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')).join('\n');
+    download('pengu_export.csv', csv, 'text/csv;charset=utf-8');
+  });
+  qs('#btn-backup').addEventListener('click', () => {
+    download('pengu_backup.json', JSON.stringify(db));
+  });
+  qs('#btn-dump').addEventListener('click', () => {
+    qs('#dump-area').value = JSON.stringify(db, null, 2);
+  });
+  qs('#btn-restore').addEventListener('click', () => {
+    try {
+      const data = JSON.parse(qs('#dump-area').value || '{}');
+      db = { sets: data.sets || {}, items: data.items || {}, progress: data.progress || {} };
+      save();
+      renderAll();
+      alert('Restaurado.');
+    } catch (e) {
+      alert('JSON inválido.');
+    }
+  });
+
+  // === Navigation ===
+  function switchView(name) {
+    ['sets','flash','learn','test','match','pair','comb','import'].forEach(v => {
+      const sec = qs('#view-' + v);
+      if (sec) sec.classList.add('hidden');
+    });
+    const active = qs('#view-' + name);
+    if (active) active.classList.remove('hidden');
+    ['nav-sets','nav-flash','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-import'].forEach(id => {
+      const btn = qs('#' + id);
+      if (btn) btn.classList.remove('primary');
+    });
+    let navBtn = qs('#nav-' + name);
+    if (!navBtn && name === 'match') navBtn = qs('#nav-memory');
+    if (!navBtn && name === 'pair') navBtn = qs('#nav-pair');
+    if (!navBtn && name === 'comb') navBtn = qs('#nav-comb');
+    if (navBtn) navBtn.classList.add('primary');
+    if (name === 'flash') initFlash();
+    if (name === 'learn') renderLearn();
+    if (name === 'test') { currentTest = null; renderTest(); }
+    if (name === 'match') {
+      matchState = null;
+      qs('#match-area').innerHTML = '';
+      qs('#match-moves').innerText = 'Movimientos: 0';
+      qs('#match-progress').innerText = '0/0';
+    }
+    if (name === 'pair') {
+      pairState = null;
+      qs('#pair-area').innerHTML = '';
+      qs('#pair-progress').innerText = '0/0';
+    }
+    if (name === 'comb') {
+      combState = null;
+      qs('#comb-area').innerHTML = '';
+      qs('#comb-progress').innerText = '0/0';
+    }
+
+    // Stop flash autoplay when leaving flash view
+    if (name !== 'flash' && flashAuto) {
+      flashAuto = false;
+      clearTimeout(flashAutoTimer);
+      const btn = qs('#flash-auto');
+      if (btn) {
+        btn.classList.remove('primary');
+        btn.innerText = 'Auto';
+      }
+    }
+  }
+  qs('#nav-sets').onclick = () => { switchView('sets'); };
+  qs('#nav-flash').onclick = () => { switchView('flash'); };
+  qs('#nav-learn').onclick = () => { switchView('learn'); };
+  qs('#nav-test').onclick = () => { switchView('test'); };
+  qs('#nav-memory').onclick = () => { switchView('match'); };
+  qs('#nav-comb').onclick = () => { switchView('comb'); };
+  qs('#nav-pair').onclick = () => { switchView('pair'); };
+  qs('#nav-import').onclick = () => { switchView('import'); };
+
+  // === Modals and events for sets ===
+  qs('#btn-new-set').onclick = () => {
+    qs('#scrim').style.display = 'flex';
+    qs('#new-title').value = '';
+    qs('#new-desc').value = '';
+  };
+  qs('#modal-cancel').onclick = () => { qs('#scrim').style.display = 'none'; };
+  qs('#modal-ok').onclick = () => {
+    const title = (qs('#new-title').value || '').trim();
+    if (!title) { alert('Título requerido'); return; }
+    const id = uuid();
+    db.sets[id] = { id:id, title:title, description: (qs('#new-desc').value || '').trim(), createdAt: nowISO(), updatedAt: nowISO() };
+    db.items[id] = [];
+    save();
+    qs('#scrim').style.display = 'none';
+    renderAll();
+  };
+  qs('#btn-clear').onclick = () => {
+    if (confirm('Esto borrará TODOS los sets y progreso.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      load();
+      renderAll();
+    }
+  };
+
+  // === Functions for adding multiple cards ===
+  function addCardPrompt(setId) {
+    multiSetId = setId;
+    const form = qs('#multi-form');
+    form.innerHTML = '';
+    addRow();
+    qs('#scrim-cards').style.display = 'flex';
+  }
+  function addRow() {
+    const row = el('div', { className: 'row', style: 'gap:8px; align-items:flex-start' });
+    const termInput = el('input', { placeholder:'Término', style:'flex:1' });
+    const defInput = el('input', { placeholder:'Definición', style:'flex:1' });
+    const delBtn = el('button', { innerText:'×', className:'danger', style:'padding:0 12px' });
+    delBtn.onclick = () => { row.remove(); };
+    row.appendChild(termInput);
+    row.appendChild(defInput);
+    row.appendChild(delBtn);
+    qs('#multi-form').appendChild(row);
+  }
+  qs('#btn-add-row').onclick = addRow;
+  qs('#btn-save-cards').onclick = () => {
+    if (!multiSetId) { qs('#scrim-cards').style.display = 'none'; return; }
+    const rows = Array.from(qs('#multi-form').children);
+    rows.forEach(r => {
+      const inputs = r.querySelectorAll('input');
+      if (!inputs || inputs.length < 2) return;
+      const term = (inputs[0].value || '').trim();
+      const def = (inputs[1].value || '').trim();
+      if (term && def) {
+        db.items[multiSetId] = db.items[multiSetId] || [];
+        const exists = db.items[multiSetId].some(x => x.term === term && x.definition === def);
+        if (!exists) {
+          db.items[multiSetId].push({ id: uuid(), term: term, definition: def, extra_notes: '', tags: [], difficulty: null });
+        }
+      }
+    });
+    if (db.sets[multiSetId]) db.sets[multiSetId].updatedAt = nowISO();
+    save();
+    qs('#scrim-cards').style.display = 'none';
+    renderAll();
+  };
+  qs('#btn-cancel-cards').onclick = () => {
+    qs('#scrim-cards').style.display = 'none';
+  };
+
+  // === Events for flashcards ===
+  qs('#select-flash').onchange = initFlash;
+  qs('#flash-reverse').onclick = () => { flashState.reversed = !flashState.reversed; renderFlash(); };
+  qs('#flash-shuffle').onclick = () => { flashState.order.sort(() => Math.random() - 0.5); flashState.index = 0; renderFlash(); };
+  qs('#flash-prev').onclick = flashPrev;
+  qs('#flash-next').onclick = flashNext;
+  qs('#flash-show').onclick = flashFlip;
+  qs('#flash-card').addEventListener('click', e => {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('select')) return;
+    flashFlip();
+  });
+  // Autoplay for flashcards: flip and advance every 5 seconds when activated
+  qs('#flash-auto').onclick = () => {
+    flashAuto = !flashAuto;
+    const btn = qs('#flash-auto');
+    if (flashAuto) {
+      // highlight button to indicate active
+      btn.classList.add('primary');
+      btn.innerText = 'Auto ON';
+      flashAutoFlipped = false;
+      clearTimeout(flashAutoTimer);
+      function step() {
+        if (!flashAuto) return;
+        if (!flashAutoFlipped) {
+          flashFlip();
+          flashAutoFlipped = true;
+        } else {
+          flashNext();
+          flashAutoFlipped = false;
+        }
+        flashAutoTimer = setTimeout(step, 5000);
+      }
+      flashAutoTimer = setTimeout(step, 5000);
+    } else {
+      btn.classList.remove('primary');
+      btn.innerText = 'Auto';
+      clearTimeout(flashAutoTimer);
+    }
+  };
+  // There are no hard/easy buttons in flashcards; study by flipping and using autoplay/manual navigation.
+  // No grading buttons in flash view; flashcards can be studied manually or via autoplay.
+  const cardEl = () => qs('#flash-card');
+  cardEl().addEventListener('touchstart', handleTouchStart, { passive: true });
+  cardEl().addEventListener('touchmove', handleTouchMove, { passive: true });
+  cardEl().addEventListener('touchend', handleTouchEnd);
+  document.addEventListener('keydown', e => {
+    if (qs('#view-flash').classList.contains('hidden')) return;
+    if (e.code === 'Space') { e.preventDefault(); flashFlip(); }
+    if (e.code === 'ArrowLeft') flashPrev();
+    if (e.code === 'ArrowRight') flashNext();
+  });
+
+  // (Removed global click handler for flash hard/easy)
+
+  // === Events for Learn ===
+  qs('#select-learn').onchange = renderLearn;
+  qs('#learn-mode').onchange = renderLearn;
+  qs('#learn-direction').onchange = renderLearn;
+  qs('#learn-reset').onclick = () => {
+    if (!currentSet) return;
+    if (confirm('¿Reiniciar progreso de este set?')) {
+      delete db.progress[currentSet];
+      save();
+      renderLearn();
+    }
+  };
+
+  // === Events for Test ===
+  qs('#select-test').onchange = () => { currentTest = null; renderTest(); };
+  qs('#test-generate').onclick = genTest;
+  qs('#test-grade').onclick = gradeTest;
+  qs('#test-reset').onclick = () => {
+    currentTest = null;
+    renderTest();
+    qs('#test-report').classList.add('hidden');
+  };
+
+  // === Events for Match ===
+  qs('#select-match').onchange = () => {};
+  qs('#match-start').onclick = startMatch;
+
+  // === Events for Pair and Combination games ===
+  qs('#pair-start').onclick = startPair;
+  qs('#comb-start').onclick = startComb;
+
+  // === Initialization ===
+  function renderAll() {
+    syncSelectors();
+    renderSets();
+    if (currentSet) {
+      initFlash();
+      renderLearn();
+    }
+  }
+  load();
+  renderAll();
+  switchView('sets');
+
+  </script>
+</body>
+</html>
