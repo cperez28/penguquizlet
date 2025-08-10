@@ -158,6 +158,20 @@
       height: 100%;
       background: linear-gradient(90deg, var(--accent), var(--accent2));
     }
+
+    /* Image support for cards and learn/test modes */
+    .card-image {
+      max-width: 100%;
+      max-height: 180px;
+      margin-top: 8px;
+      border-radius: 12px;
+    }
+    .learn-image, .test-image {
+      max-width: 100%;
+      max-height: 200px;
+      margin-top: 8px;
+      border-radius: 12px;
+    }
     /* Flashcards */
     .flash-wrap {
       position: relative;
@@ -511,6 +525,7 @@
         <h3 class="section-title">Mis sets</h3>
         <div class="row" style="gap: 8px">
           <button id="btn-new-set">Nuevo set</button>
+          <button id="btn-new-folder" class="ghost">Nueva carpeta</button>
           <button id="btn-clear" class="danger">Borrar todo</button>
         </div>
       </div>
@@ -705,6 +720,10 @@
       <div class="grid">
         <input id="new-title" placeholder="Título del set" />
         <textarea id="new-desc" rows="2" placeholder="Descripción (opcional)"></textarea>
+        <!-- Folder selector: populated dynamically with existing folders -->
+        <select id="new-folder-select">
+          <option value="">Sin carpeta</option>
+        </select>
       </div>
       <div class="row" style="gap:8px; margin-top:10px; justify-content:flex-end">
         <button id="modal-cancel" class="ghost">Cancelar</button>
@@ -724,6 +743,20 @@
       <div class="row" style="gap:8px; margin-top:10px; justify-content:flex-end">
         <button id="btn-cancel-cards" class="ghost">Cancelar</button>
         <button id="btn-save-cards" class="primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for creating new folders -->
+  <div class="scrim" id="scrim-folder">
+    <div class="modal">
+      <h3>Nueva carpeta</h3>
+      <div class="grid">
+        <input id="folder-name" placeholder="Nombre de la carpeta" />
+      </div>
+      <div class="row" style="gap:8px; margin-top:10px; justify-content:flex-end">
+        <button id="folder-cancel" class="ghost">Cancelar</button>
+        <button id="folder-ok" class="primary">Crear</button>
       </div>
     </div>
   </div>
@@ -816,7 +849,8 @@
 
   // === Storage layer ===
   const STORAGE_KEY = 'penguQuizlet:v5';
-  let db = { sets: {}, items: {}, progress: {} };
+// Database structure now also tracks folders for organizing sets
+let db = { sets: {}, items: {}, progress: {}, folders: {} };
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -825,12 +859,15 @@
         db.sets = parsed.sets || {};
         db.items = parsed.items || {};
         db.progress = parsed.progress || {};
+        // Load folders if present
+        db.folders = parsed.folders || {};
       }
     } catch (e) {
       console.warn('Load failed', e);
     }
   }
   function save() {
+    // Persist folders along with sets, items and progress
     localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
   }
   function uuid() {
@@ -875,37 +912,78 @@
       list.appendChild(el('div', { className: 'muted', innerText: 'Aún no tienes sets. Importa un CSV/JSON o crea uno nuevo.' }));
       return;
     }
+    // Group sets by folder (use empty string for no folder)
+    const groups = {};
     ids.forEach(id => {
       const s = db.sets[id];
-      const items = db.items[id] || [];
-      const row = el('div', { className: 'item' });
-      const top = el('div', { className: 'row space-between' });
-      const left = el('div');
-      const prog = renderSetProgress(id);
-      left.innerHTML = `<strong>${s.title}</strong> <span class="muted">(${items.length} tarjetas)</span>` + (prog ? ` <span class="pill" style="margin-left:4px">${prog}</span>` : '');
-      top.appendChild(left);
-      const actions = el('div', { className: 'row', style: 'gap:8px; flex-wrap:wrap' });
-      const btnStudy = el('button', { innerText: 'Abrir' });
-      btnStudy.onclick = () => { currentSet = id; syncSelectors(); switchView('flash'); initFlash(); };
-      const btnEdit = el('button', { innerText: 'Añadir tarjeta', className: 'ghost' });
-      btnEdit.onclick = () => { addCardPrompt(id); };
-      const btnDelete = el('button', { innerText: 'Eliminar', className: 'danger' });
-      btnDelete.onclick = () => {
-        if (confirm('¿Eliminar set y tarjetas?')) {
-          delete db.sets[id];
-          delete db.items[id];
-          delete db.progress[id];
+      const fid = s.folder || '';
+      if (!groups[fid]) groups[fid] = [];
+      groups[fid].push(id);
+    });
+    // Sort folder keys: folders alphabetically, unfiled last
+    const fids = Object.keys(groups).sort((a,b) => {
+      if (a === '' && b !== '') return 1;
+      if (b === '' && a !== '') return -1;
+      const an = a && db.folders[a] ? db.folders[a].name.toLowerCase() : '';
+      const bn = b && db.folders[b] ? db.folders[b].name.toLowerCase() : '';
+      return an.localeCompare(bn);
+    });
+    fids.forEach(fid => {
+      const headerName = fid && db.folders[fid] ? db.folders[fid].name : 'Sin carpeta';
+      const header = el('div', { className:'muted', innerText: headerName, style:'font-weight:600;margin-top:8px' });
+      list.appendChild(header);
+      groups[fid].forEach(id => {
+        const s = db.sets[id];
+        const items = db.items[id] || [];
+        const row = el('div', { className: 'item' });
+        // Top row with title, count, progress and actions
+        const top = el('div', { className: 'row space-between' });
+        const left = el('div');
+        const prog = renderSetProgress(id);
+        left.innerHTML = `<strong>${s.title}</strong> <span class="muted">(${items.length} tarjetas)</span>` + (prog ? ` <span class="pill" style="margin-left:4px">${prog}</span>` : '');
+        top.appendChild(left);
+        const actions = el('div', { className: 'row', style: 'gap:8px; flex-wrap:wrap' });
+        const btnStudy = el('button', { innerText: 'Abrir' });
+        btnStudy.onclick = () => { currentSet = id; syncSelectors(); switchView('flash'); initFlash(); };
+        const btnEdit = el('button', { innerText: 'Añadir tarjeta', className: 'ghost' });
+        btnEdit.onclick = () => { addCardPrompt(id); };
+        const btnDelete = el('button', { innerText: 'Eliminar', className: 'danger' });
+        btnDelete.onclick = () => {
+          if (confirm('¿Eliminar set y tarjetas?')) {
+            delete db.sets[id];
+            delete db.items[id];
+            delete db.progress[id];
+            save();
+            renderAll();
+          }
+        };
+        actions.appendChild(btnStudy);
+        actions.appendChild(btnEdit);
+        actions.appendChild(btnDelete);
+        top.appendChild(actions);
+        row.appendChild(top);
+        // Description
+        if (s.description) row.appendChild(el('div', { className: 'muted', innerText: s.description }));
+        // Folder selection row
+        const folderRow = el('div', { className:'row', style:'gap:8px; margin-top:4px; flex-wrap:wrap; align-items:center' });
+        folderRow.appendChild(el('small', { className:'muted', innerText:'Carpeta:' }));
+        const fs = el('select', { style:'min-width:140px' });
+        fs.appendChild(el('option', { value:'', innerText:'Sin carpeta' }));
+        Object.values(db.folders).forEach(fobj => {
+          const opt = el('option', { value:fobj.id, innerText:fobj.name });
+          if (s.folder && s.folder === fobj.id) opt.selected = true;
+          fs.appendChild(opt);
+        });
+        fs.onchange = () => {
+          s.folder = fs.value || null;
+          db.sets[id] = s;
           save();
-          renderAll();
-        }
-      };
-      actions.appendChild(btnStudy);
-      actions.appendChild(btnEdit);
-      actions.appendChild(btnDelete);
-      top.appendChild(actions);
-      row.appendChild(top);
-      if (s.description) row.appendChild(el('div', { className: 'muted', innerText: s.description }));
-      list.appendChild(row);
+          renderSets();
+        };
+        folderRow.appendChild(fs);
+        row.appendChild(folderRow);
+        list.appendChild(row);
+      });
     });
   }
 
@@ -942,10 +1020,20 @@
     }
     const i = flashState.order[flashState.index];
     const it = items[i];
-    const front = flashState.reversed ? it.definition : it.term;
-    const back = flashState.reversed ? it.term : it.definition;
-    qs('#flash-front').innerText = front;
-    qs('#flash-back').innerText = back;
+    // Determine content for front and back. Only show image on definition side
+    let frontContent = flashState.reversed ? it.definition : it.term;
+    let backContent = flashState.reversed ? it.term : it.definition;
+    if (it.image) {
+      if (flashState.reversed) {
+        // definition shown on front
+        frontContent += `<br><img src="${it.image}" class="card-image" />`;
+      } else {
+        // definition on back
+        backContent += `<br><img src="${it.image}" class="card-image" />`;
+      }
+    }
+    qs('#flash-front').innerHTML = frontContent;
+    qs('#flash-back').innerHTML = backContent;
     inner.classList.remove('flipped');
   }
   function flashFlip() {
@@ -1130,6 +1218,11 @@
     if (q.kind === 'mcq') {
       const card = el('div', { className: 'item learn-card' });
       card.appendChild(el('div', { className: 'term', innerText: q.prompt }));
+      // Append image if item has one
+      const it = (db.items[setId] || []).find(x => x.id === q.id);
+      if (it && it.image) {
+        card.appendChild(el('img', { className:'learn-image', src: it.image }));
+      }
       q.choices.forEach((c, idx) => {
         const b = el('button', { className: 'item', style:'display:block;width:100%;text-align:left;margin-top:4px;', innerText: c });
         b.onclick = () => {
@@ -1143,6 +1236,11 @@
       const card2 = el('div', { className: 'item learn-card' });
       const label = q.direction === 'term' ? 'Escribe el TÉRMINO: ' : 'Escribe la DEFINICIÓN: ';
       card2.appendChild(el('div', { className: 'term', innerText: label + q.prompt }));
+      // Append image if item has one
+      const it2 = (db.items[setId] || []).find(x => x.id === q.id);
+      if (it2 && it2.image) {
+        card2.appendChild(el('img', { className:'learn-image', src: it2.image }));
+      }
       const inp = el('input', { placeholder: q.direction === 'term' ? 'Término...' : 'Definición...', style:'margin-top:8px' });
       const res = el('div', { className: 'muted', style:'margin-top:8px' });
       const btn = el('button', { className: 'primary', innerText: 'Comprobar', style:'margin-top:8px' });
@@ -1164,6 +1262,11 @@
     } else if (q.kind === 'judge') {
       const card3 = el('div', { className: 'item learn-card' });
       card3.appendChild(el('div', { className: 'term', innerText: q.prompt }));
+      // Append image if item has one
+      const it3 = (db.items[setId] || []).find(x => x.id === q.id);
+      if (it3 && it3.image) {
+        card3.appendChild(el('img', { className:'learn-image', src: it3.image }));
+      }
       card3.appendChild(el('div', { className: 'def', innerText: q.shown, style:'margin-top:6px' }));
       const row = el('div', { className: 'row', style:'gap:8px;margin-top:8px' });
       const b1 = el('button', { className: 'primary', innerText:'Verdadero' });
@@ -1274,6 +1377,19 @@
       const card = el('div', { className: 'item' });
       card.id = 'qcard_' + idx;
       card.appendChild(el('div', { className: 'term', innerText: `${idx + 1}. ${q.prompt}` }));
+      // Append image if this item has one (only for definition side)
+      const itemsList = db.items[currentSet] || [];
+      let imgItem = null;
+      if (q.kind === 'short') {
+        // q.answer holds the term
+        imgItem = itemsList.find(x => x.term === q.answer);
+      } else {
+        // q.prompt holds the term
+        imgItem = itemsList.find(x => x.term === q.prompt);
+      }
+      if (imgItem && imgItem.image) {
+        card.appendChild(el('img', { className:'test-image', src: imgItem.image }));
+      }
       if (q.kind === 'mcq') {
         q.choices.forEach((c, i) => {
           const id = `q${idx}_c${i}`;
@@ -1882,7 +1998,7 @@
   qs('#btn-restore').addEventListener('click', () => {
     try {
       const data = JSON.parse(qs('#dump-area').value || '{}');
-      db = { sets: data.sets || {}, items: data.items || {}, progress: data.progress || {} };
+      db = { sets: data.sets || {}, items: data.items || {}, progress: data.progress || {}, folders: data.folders || {} };
       save();
       renderAll();
       alert('Restaurado.');
@@ -1958,13 +2074,60 @@
     qs('#scrim').style.display = 'flex';
     qs('#new-title').value = '';
     qs('#new-desc').value = '';
+    // Populate folder dropdown with current folders
+    const sel = qs('#new-folder-select');
+    if (sel) {
+      sel.innerHTML = '<option value="">Sin carpeta</option>';
+      Object.values(db.folders).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = f.name;
+        sel.appendChild(opt);
+      });
+    }
+  };
+
+  // Folder management modal
+  qs('#btn-new-folder').onclick = () => {
+    // Reset the input and show folder modal
+    qs('#folder-name').value = '';
+    qs('#scrim-folder').style.display = 'flex';
+  };
+  qs('#folder-cancel').onclick = () => {
+    qs('#scrim-folder').style.display = 'none';
+  };
+  qs('#folder-ok').onclick = () => {
+    const name = (qs('#folder-name').value || '').trim();
+    if (!name) {
+      alert('Nombre de carpeta requerido');
+      return;
+    }
+    // Avoid creating duplicate folders (case-insensitive)
+    const exists = Object.values(db.folders).some(f => {
+      return (f.name || '').trim().toLowerCase() === name.toLowerCase();
+    });
+    if (exists) {
+      alert('Ya existe una carpeta con ese nombre');
+      // Hide modal without adding a new folder
+      qs('#scrim-folder').style.display = 'none';
+      return;
+    }
+    // Generate unique id for folder and add to db
+    const id = uuid();
+    db.folders[id] = { id: id, name: name, createdAt: nowISO() };
+    save();
+    qs('#scrim-folder').style.display = 'none';
+    renderAll();
   };
   qs('#modal-cancel').onclick = () => { qs('#scrim').style.display = 'none'; };
   qs('#modal-ok').onclick = () => {
     const title = (qs('#new-title').value || '').trim();
     if (!title) { alert('Título requerido'); return; }
     const id = uuid();
-    db.sets[id] = { id:id, title:title, description: (qs('#new-desc').value || '').trim(), createdAt: nowISO(), updatedAt: nowISO() };
+    // Determine folder assignment
+    const folderSel = qs('#new-folder-select');
+    const folderId = (folderSel && folderSel.value) ? folderSel.value : null;
+    db.sets[id] = { id:id, title:title, description: (qs('#new-desc').value || '').trim(), folder: folderId, createdAt: nowISO(), updatedAt: nowISO() };
     db.items[id] = [];
     save();
     qs('#scrim').style.display = 'none';
@@ -1990,32 +2153,51 @@
     const row = el('div', { className: 'row', style: 'gap:8px; align-items:flex-start' });
     const termInput = el('input', { placeholder:'Término', style:'flex:1' });
     const defInput = el('input', { placeholder:'Definición', style:'flex:1' });
+    // Optional image input for manual cards
+    const imgInput = el('input', { type:'file', accept:'image/*', style:'flex:1' });
     const delBtn = el('button', { innerText:'×', className:'danger', style:'padding:0 12px' });
     delBtn.onclick = () => { row.remove(); };
     row.appendChild(termInput);
     row.appendChild(defInput);
+    row.appendChild(imgInput);
     row.appendChild(delBtn);
     qs('#multi-form').appendChild(row);
   }
   qs('#btn-add-row').onclick = addRow;
-  qs('#btn-save-cards').onclick = () => {
+  qs('#btn-save-cards').onclick = async () => {
     if (!multiSetId) { qs('#scrim-cards').style.display = 'none'; return; }
     const rows = Array.from(qs('#multi-form').children);
-    rows.forEach(r => {
-      const inputs = r.querySelectorAll('input');
-      if (!inputs || inputs.length < 2) return;
-      const term = (inputs[0].value || '').trim();
-      const def = (inputs[1].value || '').trim();
-      if (term && def) {
-        db.items[multiSetId] = db.items[multiSetId] || [];
-        const exists = db.items[multiSetId].some(x => x.term === term && x.definition === def);
-        if (!exists) {
-          db.items[multiSetId].push({ id: uuid(), term: term, definition: def, extra_notes: '', tags: [], difficulty: null });
-        }
+    const itemsToAdd = [];
+    for (const r of rows) {
+      const termInput = r.querySelector('input[placeholder="Término"]');
+      const defInput = r.querySelector('input[placeholder="Definición"]');
+      if (!termInput || !defInput) continue;
+      const term = (termInput.value || '').trim();
+      const def = (defInput.value || '').trim();
+      if (!term || !def) continue;
+      // Check for image
+      let imgData = null;
+      const fileInp = r.querySelector('input[type="file"]');
+      if (fileInp && fileInp.files && fileInp.files[0]) {
+        imgData = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(fileInp.files[0]);
+        });
       }
-    });
-    if (db.sets[multiSetId]) db.sets[multiSetId].updatedAt = nowISO();
-    save();
+      // Avoid duplicates (term+def)
+      db.items[multiSetId] = db.items[multiSetId] || [];
+      const exists = db.items[multiSetId].some(x => x.term === term && x.definition === def);
+      if (!exists) {
+        itemsToAdd.push({ id: uuid(), term: term, definition: def, image: imgData || null, extra_notes: '', tags: [], difficulty: null });
+      }
+    }
+    if (itemsToAdd.length) {
+      db.items[multiSetId] = db.items[multiSetId] || [];
+      itemsToAdd.forEach(it => db.items[multiSetId].push(it));
+      if (db.sets[multiSetId]) db.sets[multiSetId].updatedAt = nowISO();
+      save();
+    }
     qs('#scrim-cards').style.display = 'none';
     renderAll();
   };
