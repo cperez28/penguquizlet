@@ -414,6 +414,73 @@
       pointer-events: none;
       z-index: 100;
     }
+
+    /* === Styles for Cloze + Elaboración game === */
+    .cloze-def {
+      background: var(--chip);
+      border: 1px dashed var(--border);
+      padding: 12px;
+      border-radius: 12px;
+    }
+    .blank {
+      display: inline-block;
+      min-width: 90px;
+      border-bottom: 2px solid var(--accent);
+      text-align: center;
+      padding: 0 4px;
+      margin: 0 2px;
+    }
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 6px 0;
+    }
+    .chip {
+      border: 1px dashed var(--border);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .fb-box {
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+    }
+    .bar {
+      height: 8px;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .badge {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .badge.ok {
+      color: var(--success);
+      border-color: var(--success);
+    }
+    .badge.warn {
+      color: var(--warn);
+      border-color: var(--warn);
+    }
+    .badge.err {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
   </style>
 </head>
 <body>
@@ -433,6 +500,7 @@
         <button id="nav-memory">Memorama</button>
         <button id="nav-comb">Combinar</button>
         <button id="nav-pair">Parear</button>
+        <button id="nav-cloze">Elaborar</button>
         <button id="nav-import">Importar/Exportar</button>
       </div>
     </header>
@@ -581,6 +649,21 @@
       <div id="comb-area" class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px"></div>
       <div id="comb-info" class="row" style="gap:8px; margin-top:8px">
         <span class="pill" id="comb-progress">0/0</span>
+      </div>
+    </section>
+
+    <!-- Cloze + Elaboración view -->
+    <section id="view-cloze" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Elaborar</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-cloze"></select>
+          <button id="cloze-start" class="primary">Iniciar</button>
+        </div>
+      </div>
+      <div id="cloze-card" style="margin-top:12px"></div>
+      <div class="row" style="gap:8px; margin-top:8px">
+        <span class="pill" id="cloze-progress">0/0</span>
       </div>
     </section>
 
@@ -832,7 +915,7 @@
     Object.values(db.sets).forEach(s => {
       options += `<option value="${s.id}"${s.id === currentSet ? ' selected' : ''}>${s.title}</option>`;
     });
-    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb'].forEach(id => {
+    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze'].forEach(id => {
       const select = qs('#' + id);
       select.innerHTML = options;
     });
@@ -1537,6 +1620,177 @@
     if (correctCount === combState.items.length) window.confettiLaunch(200);
   }
 
+  // === Cloze + Elaboración game ===
+  let clozeState = null;
+  // Set of stopwords used for keyword extraction in cloze mode
+  const CLOZE_STOP = new Set("de la las los del para por con sin sobre entre hacia desde como que una uno un y o e es son se a al en lo sus".split(/\s+/));
+  // Normalize and tokenize text for keyword extraction
+  const clozeToken = s => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(/[a-z0-9áéíóúüñ-]+/gi) || [];
+  const clozeUniq = a => [...new Set(a)];
+  function extractKeywords(def, k = 4) {
+    const raw = def || "";
+    const toks = clozeToken(raw);
+    const upper = clozeUniq((raw.match(/\b[A-ZÁÉÍÓÚÜÑ]{2,}\b/g) || []));
+    const long = clozeUniq(toks.filter(w => w.length >= 6 && !CLOZE_STOP.has(w)));
+    const tech = clozeUniq(toks.filter(w => /(cion|sion|miento|logia|lisis|fago|metria|plasma|genesis|oxidativa|fosforilacion|hidrolit|ribosom|membrana)/i.test(w)));
+    const cand = clozeUniq([...upper, ...tech, ...long]);
+    const scored = cand.map(w => ({ w, score: w.length + (/^[A-ZÁÉÍÓÚÜÑ]{2,}$/.test(w) ? 2 : 0) })).sort((a, b) => b.score - a.score);
+    const essential = scored.slice(0, Math.max(3, Math.min(k, scored.length))).map(x => x.w);
+    const secondary = cand.filter(w => !essential.includes(w));
+    return { essential, secondary };
+  }
+  function buildCloze(def, essential) {
+    let txt = def;
+    essential.forEach(k => {
+      const rx = new RegExp("\\b" + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "\\b", "i");
+      txt = txt.replace(rx, m => `<span class="blank" data-answer="${m}">_____</span>`);
+    });
+    return txt;
+  }
+  function evaluateElaboration(text, essential, secondary) {
+    const T = (text || "").toLowerCase();
+    const covHits = essential.filter(w => T.includes(w.toLowerCase())).length;
+    const covScore = covHits === essential.length ? 2 : (covHits > 0 ? 1 : 0);
+    const specHits = secondary.filter(w => T.includes(w.toLowerCase())).length;
+    const hasEx = /por ejemplo|e\.g\.|como|similar a/i.test(text || "");
+    const specScore = (specHits >= 1 || hasEx) ? 2 : 0;
+    const total = covScore + specScore;
+    return { total, covScore, specScore, covHits };
+  }
+  function startCloze() {
+    const setId = qs('#select-cloze').value || currentSet;
+    if (!setId) { alert('Selecciona un set'); return; }
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    if (!items.length) { alert('Set vacío'); return; }
+    const shuffled = items.slice().sort(() => Math.random() - 0.5);
+    clozeState = { items: shuffled, index: 0, keys: null };
+    renderCloze();
+  }
+  function renderCloze() {
+    const card = qs('#cloze-card');
+    if (!card) return;
+    card.innerHTML = '';
+    if (!clozeState || !clozeState.items.length) {
+      card.innerHTML = '<p class="muted">No hay tarjetas en este set.</p>';
+      qs('#cloze-progress').innerText = '0/0';
+      return;
+    }
+    if (clozeState.index >= clozeState.items.length) {
+      card.innerHTML = '<p class="muted">¡Terminaste! Usa Iniciar para repetir.</p>';
+      qs('#cloze-progress').innerText = `${clozeState.items.length}/${clozeState.items.length}`;
+      return;
+    }
+    const item = clozeState.items[clozeState.index];
+    ensureProgress(currentSet);
+    const keys = extractKeywords(item.definition, 4);
+    clozeState.keys = keys;
+    // Header row
+    const wrap = el('div', { className: 'row space-between', style: 'align-items:center; gap:8px' });
+    const left = el('div', {});
+    left.appendChild(el('div', { style: 'font-weight:700; font-size:20px; margin-bottom:4px', innerText: item.term }));
+    left.appendChild(el('small', { className: 'muted', innerText: `Tarjeta ${clozeState.index+1}/${clozeState.items.length}` }));
+    const right = el('div', { className: 'row', style:'gap:6px' });
+    const nextBtn = el('button', { innerText:'Siguiente', className:'ghost', id:'cloze-next' });
+    const revealBtn = el('button', { innerText:'Ver definición', className:'ghost', id:'cloze-reveal' });
+    right.appendChild(nextBtn);
+    right.appendChild(revealBtn);
+    wrap.appendChild(left);
+    wrap.appendChild(right);
+    card.appendChild(wrap);
+    // Cloze definition
+    const clozeDef = el('div', { className:'cloze-def', id:'cloze-def', style:'margin-top:8px' });
+    clozeDef.innerHTML = buildCloze(item.definition, keys.essential);
+    card.appendChild(clozeDef);
+    // Guess row
+    const guessRow = el('div', { className:'row', style:'gap:8px; margin-top:8px; flex-wrap:wrap' });
+    const guessInput = el('input', { id:'cloze-guess', placeholder:'Escribe la palabra que falta y presiona Enter', style:'flex:1' });
+    const checkBtn = el('button', { id:'cloze-check', innerText:'Comprobar', className:'primary' });
+    guessRow.appendChild(guessInput);
+    guessRow.appendChild(checkBtn);
+    card.appendChild(guessRow);
+    const fb = el('div', { id:'cloze-feedback', className:'fb-box', style:'display:none' });
+    card.appendChild(fb);
+    // Chips and elaboration
+    const chips = el('div', { className:'chips', id:'cloze-chips' });
+    const chipHtml = keys.essential.map(x => `<span class="chip">★ ${x}</span>`).join(' ') + (keys.secondary.length ? `<span class="chip">sec: ${keys.secondary.slice(0,3).join(', ')}</span>` : '');
+    chips.innerHTML = chipHtml;
+    card.appendChild(chips);
+    const ta = el('textarea', { id:'cloze-elab', placeholder:'Explica el término en 1–2 frases. Añade un detalle técnico o ejemplo.', style:'margin-top:6px; width:100%' });
+    card.appendChild(ta);
+    const evalRow = el('div', { className:'row', style:'gap:6px; margin-top:6px; align-items:center' });
+    const evalBtn = el('button', { id:'cloze-eval', innerText:'Evaluar Elaboración', className:'primary' });
+    evalRow.appendChild(evalBtn);
+    evalRow.appendChild(el('small', { className:'muted', innerText:'Puntúa: cobertura + especificidad (0–4)' }));
+    card.appendChild(evalRow);
+    const evalBox = el('div', { id:'cloze-evalBox', className:'fb-box', style:'display:none' });
+    const row2 = el('div', { className:'row', style:'gap:8px; align-items:center' });
+    row2.appendChild(el('strong', { innerText:'Resultado' }));
+    const scoreSpan = el('span', { id:'cloze-score', className:'badge', innerText:'—' });
+    row2.appendChild(scoreSpan);
+    evalBox.appendChild(row2);
+    const bar = el('div', { className:'bar', style:'margin:8px 0' });
+    bar.appendChild(el('span', { id:'cloze-bar-fill' }));
+    evalBox.appendChild(bar);
+    const fbDiv = el('div', { id:'cloze-fb' });
+    evalBox.appendChild(fbDiv);
+    card.appendChild(evalBox);
+    // progress display
+    qs('#cloze-progress').innerText = `${clozeState.index}/${clozeState.items.length}`;
+    // function to check guess correctness
+    function doCheck() {
+      const g = guessInput.value.trim().toLowerCase();
+      if (!g) return;
+      const blanksEls = clozeDef.querySelectorAll('.blank');
+      let ok = false;
+      blanksEls.forEach(b => {
+        const ans = (b.dataset.answer || '').toLowerCase();
+        if (ans === g || ans.startsWith(g)) ok = true;
+      });
+      fb.style.display = 'block';
+      fb.innerHTML = ok ? `✔️ <span class="badge ok">¡Bien!</span> Coincide con un hueco.` : `✖️ <span class="badge err">No coincide</span>. Usa las claves como pista.`;
+      if (ok) ta.focus();
+    }
+    guessInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doCheck(); } });
+    checkBtn.onclick = doCheck;
+    evalBtn.onclick = () => {
+      const text = ta.value.trim();
+      if (!text) { alert('Escribe tu elaboración.'); return; }
+      const r = evaluateElaboration(text, keys.essential, keys.secondary);
+      evalBox.style.display = 'block';
+      scoreSpan.innerText = `${r.total}/4`;
+      scoreSpan.className = 'badge ' + (r.total >= 3 ? 'ok' : r.total >= 2 ? 'warn' : 'err');
+      evalBox.querySelector('#cloze-bar-fill').style.width = Math.round((r.total / 4) * 100) + '%';
+      fbDiv.innerHTML = `• Cobertura: <b>${r.covScore}/2</b> (mencionaste ${r.covHits}/${keys.essential.length}).<br>• Especificidad: <b>${r.specScore}/2</b> (detalle técnico o ejemplo/analogía).`;
+      // Determine quality based on guess and elaboration
+      let quality = 2;
+      const gval = guessInput.value.trim().toLowerCase();
+      let okGuess = false;
+      const blanksEls = clozeDef.querySelectorAll('.blank');
+      blanksEls.forEach(b => {
+        const ans = (b.dataset.answer || '').toLowerCase();
+        if (ans === gval || ans.startsWith(gval)) okGuess = true;
+      });
+      if (okGuess) {
+        if (r.total >= 3) quality = 5;
+        else if (r.total >= 2) quality = 4;
+        else quality = 3;
+      } else {
+        quality = 2;
+      }
+      gradeLearn(item.id, quality);
+      computeMastery(currentSet);
+      renderSets();
+    };
+    nextBtn.onclick = () => {
+      clozeState.index = (clozeState.index + 1);
+      renderCloze();
+    };
+    revealBtn.onclick = () => {
+      alert(`Definición:\n\n${item.definition}`);
+    };
+  }
+
   // === Import/Export ===
   let importRows = [];
   qs('#file-input').addEventListener('change', e => {
@@ -1639,13 +1893,13 @@
 
   // === Navigation ===
   function switchView(name) {
-    ['sets','flash','learn','test','match','pair','comb','import'].forEach(v => {
+    ['sets','flash','learn','test','match','pair','comb','cloze','import'].forEach(v => {
       const sec = qs('#view-' + v);
       if (sec) sec.classList.add('hidden');
     });
     const active = qs('#view-' + name);
     if (active) active.classList.remove('hidden');
-    ['nav-sets','nav-flash','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-import'].forEach(id => {
+    ['nav-sets','nav-flash','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import'].forEach(id => {
       const btn = qs('#' + id);
       if (btn) btn.classList.remove('primary');
     });
@@ -1673,6 +1927,10 @@
       qs('#comb-area').innerHTML = '';
       qs('#comb-progress').innerText = '0/0';
     }
+    if (name === 'cloze') {
+      // when entering cloze view, render card
+      renderCloze();
+    }
 
     // Stop flash autoplay when leaving flash view
     if (name !== 'flash' && flashAuto) {
@@ -1692,6 +1950,7 @@
   qs('#nav-memory').onclick = () => { switchView('match'); };
   qs('#nav-comb').onclick = () => { switchView('comb'); };
   qs('#nav-pair').onclick = () => { switchView('pair'); };
+  qs('#nav-cloze').onclick = () => { switchView('cloze'); };
   qs('#nav-import').onclick = () => { switchView('import'); };
 
   // === Modals and events for sets ===
@@ -1848,6 +2107,8 @@
   // === Events for Pair and Combination games ===
   qs('#pair-start').onclick = startPair;
   qs('#comb-start').onclick = startComb;
+  // Cloze game start button
+  qs('#cloze-start').onclick = startCloze;
 
   // === Initialization ===
   function renderAll() {
