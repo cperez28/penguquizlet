@@ -185,6 +185,14 @@
       perspective: 1200px;
       cursor: pointer;
     }
+    .flash-card2 {
+      position: relative;
+      margin: auto;
+      max-width: 760px;
+      height: 300px;
+      perspective: 1200px;
+      cursor: pointer;
+    }
     .flash-inner {
       position: relative;
       width: 100%;
@@ -495,6 +503,61 @@
       color: var(--danger);
       border-color: var(--danger);
     }
+    /* Leélo Tú buttons styling */
+    .leelo-btn {
+      font-size: 1.7rem;
+      padding: 10px 14px;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+    .leelo-btn:hover:not([disabled]) {
+      transform: translateY(-1px);
+    }
+    .leelo-btn[disabled] {
+      opacity: 0.5;
+      cursor: default;
+    }
+    /* Flash TTS button styling */
+    #flash-tts {
+      font-size: 1.4rem;
+      padding: 8px 12px;
+    }
+    #flash-tts[disabled] {
+      opacity: 0.5;
+      cursor: default;
+    }
+    /* Prev/Next buttons for Leélo */
+    #leelo-prev, #leelo-next {
+      font-size: 1.6rem;
+    }
+
+    flashcard-transparent {
+    background: rgba(255, 255, 255, 0.2); /* transparencia */
+    backdrop-filter: blur(8px); /* efecto cristal */
+    border-radius: 14px;
+    padding: 20px;
+    width: 86%;
+    max-width: 780px;
+    margin: 14px auto;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+  }
+  .flashcard-transparent .term {
+    font-size: clamp(24px, 4.5vw, 40px);
+    font-weight: 900;
+    color: var(--accent, #d94f87);
+    margin-bottom: 10px;
+  }
+  .flashcard-transparent .def {
+    font-size: clamp(16px, 2.5vw, 22px);
+    color: #fff;
+    line-height: 1.75;
+  }
+</style>
   </style>
 </head>
 <body>
@@ -509,6 +572,7 @@
       <div class="tabs">
         <button id="nav-sets" class="primary">Sets</button>
         <button id="nav-flash">Flashcards</button>
+        <button id="nav-leelo">Léelo Tú</button>
         <button id="nav-learn">Learn</button>
         <button id="nav-test">Probar</button>
         <button id="nav-memory">Memorama</button>
@@ -551,12 +615,55 @@
           </div>
         </div>
       </div>
-      <div class="row" id="flash-grade-row" style="gap: 10px; justify-content: center; margin-top: 10px">
-        <button id="flash-prev" class="ghost">⟵</button>
+      <div class="row" id="flash-grade-row" style="gap: 10px; justify-content: center; margin-top: 20px">
+        <button id="flash-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
         <button id="flash-show" class="primary">Voltear</button>
-        <button id="flash-next" class="ghost">⟶</button>
+        <button id="flash-tts" class="ghost" title="Escuchar Modelo">🔈</button>
+        <button id="flash-next" class="ghost" title="Siguiente Flashcard">Siguiente</button>
       </div>
       <p class="muted" style="text-align:center">Atajos: ← → · Espacio · Swipe para cambiar</p>
+    </section>
+
+    <!-- Leelo Tú view -->
+    <section id="view-leelo" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Léelo Tú</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-leelo"></select>
+          <label class="pill"><input type="checkbox" id="leelo-auto"> Auto‑grabar al abrir</label>
+          <label class="pill"><input type="checkbox" id="leelo-auto-advance"> Avanzar al guardar</label>
+        </div>
+      </div>
+      <div id="leelo-card" class="panel" style="margin-top:12px; text-align:center; padding:20px;">
+        <!-- La tarjeta-->
+        
+        <div class="flash-card2" id="flash-wrap">
+          <div class="flash-inner" id="flash-card">
+              <div class="term" id="leelo-term">—</div>
+              <div class="def" id="leelo-def">Seleccione un set.</div>
+          </div>
+        </div>
+
+        <div class="row" id="leelo-controls" style="justify-content:center; gap:10px; margin-top:20px;">
+          <button id="leelo-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
+          <button id="leelo-rec" class="leelo-btn" title="Grabar">🎙️</button>
+          <button id="leelo-stop" class="leelo-btn" title="Detener" disabled>⏹️</button>
+          <button id="leelo-play" class="leelo-btn" title="Escuchar mi lectura" disabled>▶️</button>
+          <button id="leelo-retry" class="leelo-btn" title="Repetir" disabled>🔄</button>
+          <button id="leelo-tts" class="leelo-btn" title="Lectura modelo">📢</button>
+          <button id="leelo-next" class="ghost" title="Siguiente Flashcard">Siguiente</button>
+        </div>
+        <!-- Timer and score row -->
+        <div class="row" style="justify-content:center; gap:12px; margin-top:12px;">
+          <span class="pill" id="leelo-timer" style="font-weight:600">00:00</span>
+          <span class="pill" id="leelo-score" style="font-weight:600">0 pts</span>
+        </div>
+        <div id="leelo-recent" class="sec" style="text-align:center; margin-top:14px;">
+          <audio id="leelo-audio" controls style="width:260px;"></audio>
+          <div class="muted" id="leelo-when"></div>
+        </div>
+           
+      </div>
     </section>
 
     <!-- Learn view -->
@@ -696,6 +803,7 @@
         <div>
           <h4>Exportar</h4>
           <div class="row" style="gap:8px; flex-wrap:wrap">
+            <select id="export-select"></select>
             <button id="btn-export-json">Exportar JSON</button>
             <button id="btn-export-csv">Exportar CSV</button>
             <button id="btn-backup" class="ghost">Respaldar (archivo .json)</button>
@@ -797,6 +905,21 @@
       if (trimmed.some(c => c !== '')) rows.push(trimmed);
     });
     return rows;
+  }
+
+  // Utility to trigger downloads for export (CSV/JSON). Creates a blob and triggers a hidden anchor click.
+  function download(filename, data, mime) {
+    const blob = new Blob([data], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
   }
 
   // Confetti effect for positive feedback
@@ -993,10 +1116,19 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     Object.values(db.sets).forEach(s => {
       options += `<option value="${s.id}"${s.id === currentSet ? ' selected' : ''}>${s.title}</option>`;
     });
-    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze'].forEach(id => {
+    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze','select-leelo'].forEach(id => {
       const select = qs('#' + id);
-      select.innerHTML = options;
+      if (select) select.innerHTML = options;
     });
+    // populate export select with an option for all sets plus each set
+    const exportSel = qs('#export-select');
+    if (exportSel) {
+      let opts = '<option value="">Todos los sets</option>';
+      Object.values(db.sets).forEach(s => {
+        opts += `<option value="${s.id}">${s.title}</option>`;
+      });
+      exportSel.innerHTML = opts;
+    }
   }
 
   // === Flashcards ===
@@ -1118,7 +1250,15 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
       }
     }
     if (kind === 'mcq') {
-      const pool = setItems.filter(x => x.id !== item.id).slice().sort(() => Math.random() - 0.5).slice(0, 3).map(x => (q.direction === 'term' ? x.term : x.definition));
+      // Build 5 options: one correct and up to four incorrect
+      let wrong = setItems.filter(x => x.id !== item.id).map(x => (q.direction === 'term' ? x.term : x.definition));
+      wrong = wrong.sort(() => Math.random() - 0.5);
+      const pool = wrong.slice(0, 4);
+      // If there are fewer than 4 distractors, repeat random ones
+      while (pool.length < 4) {
+        const extra = wrong[Math.floor(Math.random() * Math.max(1, wrong.length))];
+        pool.push(extra);
+      }
       const correct = q.answer;
       const ch = [correct].concat(pool).sort(() => Math.random() - 0.5);
       q.choices = ch;
@@ -1249,8 +1389,10 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
         if (btn.disabled) return;
         btn.disabled = true;
         inp.disabled = true;
-        const guess = (inp.value || '').trim().toLowerCase();
-        const ans = (q.answer || '').trim().toLowerCase();
+        const guessRaw = (inp.value || '').trim().toLowerCase();
+        const ansRaw = (q.answer || '').trim().toLowerCase();
+        const guess = stripAccents(guessRaw);
+        const ans = stripAccents(ansRaw);
         const ok = levenshtein(guess, ans) <= Math.max(1, Math.floor(ans.length * 0.1));
         res.innerText = ok ? '✓ Correcto' : `✗ Incorrecto. Resp.: ${q.answer}`;
         handleLearnAnswer(ok, q);
@@ -1332,13 +1474,18 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     return arr[bn];
   }
 
+  // Remove diacritics from a string to allow accent-insensitive comparisons
+  function stripAccents(str) {
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
   // === Test/Probar ===
   function genTest() {
     const setId = qs('#select-test').value || currentSet;
     if (!setId) return;
     currentSet = setId;
     const items = (db.items[setId] || []).slice();
-    const n = clamp(parseInt(qs('#test-count').value || '10', 10), 5, 50);
+    const n = clamp(parseInt(qs('#test-count').value || '10', 10), 5, 200);
     const mix = qs('#test-mode').value;
     if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
     const kinds = (mix === 'balanced') ? ['mcq','tf','short'] : (mix === 'mcq' ? ['mcq'] : (mix === 'tf' ? ['tf'] : ['short']));
@@ -1347,7 +1494,14 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
       const it = items[Math.floor(Math.random() * items.length)];
       const kind = kinds[i % kinds.length];
       if (kind === 'mcq') {
-        const pool = items.filter(x => x.id !== it.id).slice().sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.definition);
+        // build 5 options: one correct and up to four incorrect
+        let wrong = items.filter(x => x.id !== it.id).map(x => x.definition);
+        wrong = wrong.sort(() => Math.random() - 0.5);
+        const pool = wrong.slice(0, 4);
+        while (pool.length < 4) {
+          const extra = wrong[Math.floor(Math.random() * Math.max(1, wrong.length))];
+          pool.push(extra);
+        }
         const ch = [it.definition].concat(pool).sort(() => Math.random() - 0.5);
         qsArr.push({ kind:'mcq', prompt: it.term, choices: ch, answer: it.definition, correctIndex: ch.indexOf(it.definition) });
       } else if (kind === 'tf') {
@@ -1412,7 +1566,8 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
           row.appendChild(label);
           card.appendChild(row);
         });
-        card.appendChild(el('div', { className: 'def', innerText: 'Definición mostrada: ' + q.shown }));
+        // Show the statement without a prefix for cleaner true/false questions
+        card.appendChild(el('div', { className: 'def', innerText: q.shown, style:'margin-top:6px' }));
       } else {
         const inp = el('input', { placeholder:'Respuesta corta' });
         inp.oninput = () => { currentTest.answers[idx] = { type:'short', value: inp.value }; };
@@ -1440,8 +1595,10 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
         ok = ans && ans.value === !!q.truth;
       } else {
         byType.short.all++;
-        const guess = (ans ? ans.value : '').trim().toLowerCase();
-        const real = (q.answer || '').trim().toLowerCase();
+        const guessRaw = (ans ? ans.value : '').trim().toLowerCase();
+        const realRaw = (q.answer || '').trim().toLowerCase();
+        const guess = stripAccents(guessRaw);
+        const real = stripAccents(realRaw);
         ok = levenshtein(guess, real) <= Math.max(1, Math.floor(real.length * 0.1));
       }
       if (ok) {
@@ -1801,19 +1958,14 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     ensureProgress(currentSet);
     const keys = extractKeywords(item.definition, 4);
     clozeState.keys = keys;
-    // Header row
-    const wrap = el('div', { className: 'row space-between', style: 'align-items:center; gap:8px' });
-    const left = el('div', {});
-    left.appendChild(el('div', { style: 'font-weight:700; font-size:20px; margin-bottom:4px', innerText: item.term }));
-    left.appendChild(el('small', { className: 'muted', innerText: `Tarjeta ${clozeState.index+1}/${clozeState.items.length}` }));
-    const right = el('div', { className: 'row', style:'gap:6px' });
+    // Header: show term and progress centered
+    const header = el('div', { style: 'text-align:center; margin-bottom:8px;' });
+    header.appendChild(el('div', { style: 'font-weight:700; font-size:20px; margin-bottom:4px', innerText: item.term }));
+    header.appendChild(el('small', { className:'muted', innerText: `Tarjeta ${clozeState.index+1}/${clozeState.items.length}` }));
+    card.appendChild(header);
+    // Controls for next and reveal will be appended later as a bottom row
     const nextBtn = el('button', { innerText:'Siguiente', className:'ghost', id:'cloze-next' });
     const revealBtn = el('button', { innerText:'Ver definición', className:'ghost', id:'cloze-reveal' });
-    right.appendChild(nextBtn);
-    right.appendChild(revealBtn);
-    wrap.appendChild(left);
-    wrap.appendChild(right);
-    card.appendChild(wrap);
     // Cloze definition
     const clozeDef = el('div', { className:'cloze-def', id:'cloze-def', style:'margin-top:8px' });
     clozeDef.innerHTML = buildCloze(item.definition, keys.essential);
@@ -1851,6 +2003,11 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     const fbDiv = el('div', { id:'cloze-fb' });
     evalBox.appendChild(fbDiv);
     card.appendChild(evalBox);
+    // Bottom control row: next and reveal
+    const ctrlRow = el('div', { className:'row', style:'gap:8px; margin-top:12px; justify-content:center; flex-wrap:wrap' });
+    ctrlRow.appendChild(nextBtn);
+    ctrlRow.appendChild(revealBtn);
+    card.appendChild(ctrlRow);
     // progress display
     qs('#cloze-progress').innerText = `${clozeState.index}/${clozeState.items.length}`;
     // function to check guess correctness
@@ -1974,20 +2131,41 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     alert('Importación completada.');
   });
   qs('#btn-export-json').addEventListener('click', () => {
-    download('pengu_export.json', JSON.stringify(db, null, 2));
+    const sel = qs('#export-select');
+    const setId = sel ? sel.value : '';
+    if (!setId) {
+      // export all sets and items
+      download('pengu_export.json', JSON.stringify(db, null, 2), 'application/json;charset=utf-8');
+    } else {
+      const out = { sets: {}, items: {}, progress: {} };
+      out.sets[setId] = db.sets[setId];
+      out.items[setId] = db.items[setId] || [];
+      if (db.progress[setId]) out.progress[setId] = db.progress[setId];
+      const title = (db.sets[setId] && db.sets[setId].title ? db.sets[setId].title.replace(/[^a-z0-9_-]/gi,'_') : setId);
+      download(`${title}_export.json`, JSON.stringify(out, null, 2), 'application/json;charset=utf-8');
+    }
   });
   qs('#btn-export-csv').addEventListener('click', () => {
+    const sel = qs('#export-select');
+    const setId = sel ? sel.value : '';
     const rows = [ [ 'set_title','term','definition','extra_notes','tags','lang_term','lang_definition','difficulty' ] ];
-    Object.values(db.sets).forEach(s => {
+    const addRows = (s) => {
       (db.items[s.id] || []).forEach(it => {
         rows.push([ s.title, it.term, it.definition, it.extra_notes || '', (it.tags || []).join(','), '', '', it.difficulty || '' ]);
       });
-    });
+    };
+    if (!setId) {
+      Object.values(db.sets).forEach(s => addRows(s));
+    } else {
+      const s = db.sets[setId];
+      if (s) addRows(s);
+    }
     const csv = rows.map(row => row.map(val => {
       const s = String(val == null ? '' : val);
       return (s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }).join(',')).join('\n');
-    download('pengu_export.csv', csv, 'text/csv;charset=utf-8');
+    const name = setId ? ((db.sets[setId] && db.sets[setId].title ? db.sets[setId].title.replace(/[^a-z0-9_-]/gi,'_') : setId) + '_export.csv') : 'pengu_export.csv';
+    download(name, csv, 'text/csv;charset=utf-8');
   });
   qs('#btn-backup').addEventListener('click', () => {
     download('pengu_backup.json', JSON.stringify(db));
@@ -2007,15 +2185,255 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     }
   });
 
+  // === Events for Léelo Tú ===
+  qs('#nav-leelo').onclick = () => { switchView('leelo'); initLeelo(); };
+  qs('#select-leelo').onchange = initLeelo;
+  qs('#leelo-rec').onclick = leeloStartRec;
+  qs('#leelo-stop').onclick = leeloStopRec;
+  qs('#leelo-play').onclick = leeloPlay;
+  qs('#leelo-retry').onclick = leeloRetry;
+  qs('#leelo-tts').onclick = leeloSpeak;
+  qs('#leelo-prev').onclick = leeloPrev;
+  qs('#leelo-next').onclick = leeloNext;
+
+  // === Functions and state for Léelo Tú ===
+  let leeloState = { order: [], index: 0, recorded: {} };
+  let leeloStream = null, leeloRecorder = null, leeloRecording = false, leeloT0 = 0, leeloRaf = 0, leeloLastBlob = null, leeloRecCardId = null, leeloPoints = 0;
+
+  function leeloEnsureMic() {
+    if (leeloStream && leeloStream.active) return Promise.resolve(leeloStream);
+    return navigator.mediaDevices.getUserMedia({ audio: true }).then(s => {
+      leeloStream = s;
+      return s;
+    });
+  }
+  window.addEventListener('beforeunload', () => {
+    if (leeloStream) {
+      try { leeloStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+    }
+  });
+  // IndexedDB helpers for leelo
+  const LDB_NAME = 'penguAudio';
+  const LDB_STORE = 'recordings';
+  const LDB_VER = 1;
+  function leeloOpenDB() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(LDB_NAME, LDB_VER);
+      r.onupgradeneeded = () => {
+        const dbi = r.result;
+        const st = dbi.createObjectStore(LDB_STORE, { keyPath:'id', autoIncrement:true });
+        st.createIndex('by_card','cardId');
+        st.createIndex('by_time','ts');
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function leeloSaveRec(cardId, blob, duration) {
+    return leeloOpenDB().then(db => {
+      return new Promise((res, rej) => {
+        const tx = db.transaction(LDB_STORE, 'readwrite');
+        const st = tx.objectStore(LDB_STORE);
+        const rec = { cardId: cardId, ts: Date.now(), duration: duration, type: blob.type, blob: blob };
+        const req = st.add(rec);
+        req.onsuccess = () => res({ id: req.result, cardId: cardId, ts: rec.ts });
+        req.onerror = () => rej(req.error);
+      });
+    });
+  }
+  function leeloListByCard(cardId) {
+    return leeloOpenDB().then(db => {
+      return new Promise((res, rej) => {
+        const tx = db.transaction(LDB_STORE, 'readonly');
+        const ix = tx.objectStore(LDB_STORE).index('by_card');
+        const out = [];
+        ix.openCursor(IDBKeyRange.only(cardId)).onsuccess = e => {
+          const c = e.target.result;
+          if (c) {
+            out.push(c.value);
+            c.continue();
+          } else {
+            out.sort((a,b) => b.ts - a.ts);
+            res(out);
+          }
+        };
+        tx.onerror = () => rej(tx.error);
+      });
+    });
+  }
+  function initLeelo() {
+    const sel = qs('#select-leelo');
+    const setId = sel && sel.value ? sel.value : currentSet;
+    if (!setId) return;
+    currentSet = setId;
+    const items = (db.items[setId] || []).slice();
+    leeloState.order = items.map((_, i) => i);
+    leeloState.index = 0;
+    leeloState.recorded = {};
+    leeloPoints = 0;
+    renderLeelo();
+  }
+  function renderLeelo() {
+    const items = db.items[currentSet] || [];
+    if (!items.length) {
+      qs('#leelo-term').innerText = '(vacío)';
+      qs('#leelo-def').innerText = 'Agrega tarjetas';
+      qs('#leelo-score').innerText = '0 pts';
+      leeloLastBlob = null;
+      return;
+    }
+    const i = leeloState.order[leeloState.index];
+    const it = items[i];
+    qs('#leelo-term').innerText = it.term || '—';
+    qs('#leelo-def').innerText = it.definition || '';
+    const cardId = 'deck:' + it.id;
+    leeloRecCardId = cardId;
+    // Load last recording for this card
+    leeloListByCard(cardId).then(recs => {
+      if (recs.length) {
+        leeloLastBlob = recs[0].blob;
+        const url = URL.createObjectURL(leeloLastBlob);
+        qs('#leelo-audio').src = url;
+        qs('#leelo-when').innerText = new Date(recs[0].ts).toLocaleString();
+        qs('#leelo-recent').classList.add('on');
+        qs('#leelo-play').disabled = false;
+        qs('#leelo-retry').disabled = false;
+      } else {
+        leeloLastBlob = null;
+        qs('#leelo-audio').removeAttribute('src');
+        qs('#leelo-when').innerText = '';
+        qs('#leelo-recent').classList.remove('on');
+        qs('#leelo-play').disabled = true;
+        qs('#leelo-retry').disabled = true;
+      }
+    });
+    // Update nav buttons
+    qs('#leelo-prev').disabled = (leeloState.index <= 0);
+    qs('#leelo-next').disabled = (leeloState.index >= leeloState.order.length - 1);
+    qs('#leelo-score').innerText = leeloPoints + ' pts';
+    // Auto start recording if enabled
+    if (qs('#leelo-auto').checked) {
+      setTimeout(leeloStartRec, 200);
+    }
+  }
+  function leeloStartRec() {
+    if (leeloRecording) return;
+    const items = db.items[currentSet] || [];
+    if (!items.length) return;
+    leeloEnsureMic().then(() => {
+      const currentItem = items[leeloState.order[leeloState.index]];
+      const cid = 'deck:' + currentItem.id;
+      leeloRecCardId = cid;
+      leeloRecorder = new MediaRecorder(leeloStream, { mimeType: 'audio/webm' });
+      const chunks = [];
+      leeloRecorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      leeloRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        leeloLastBlob = blob;
+        const duration = Math.max(0, (performance.now() - leeloT0) / 1000);
+        const recId = leeloRecCardId || cid;
+        leeloSaveRec(recId, blob, duration).then(saved => {
+          // update UI if still on same card
+          const currentCardId = 'deck:' + (db.items[currentSet][leeloState.order[leeloState.index]].id);
+          if (recId === currentCardId) {
+            const url = URL.createObjectURL(blob);
+            qs('#leelo-audio').src = url;
+            qs('#leelo-when').innerText = new Date(saved.ts).toLocaleString();
+            qs('#leelo-recent').classList.add('on');
+            qs('#leelo-play').disabled = false;
+            qs('#leelo-retry').disabled = false;
+          }
+          // award points once per card
+          if (!leeloState.recorded[recId]) {
+            leeloState.recorded[recId] = true;
+            leeloPoints++;
+          }
+          qs('#leelo-score').innerText = leeloPoints + ' pts';
+          // auto advance if enabled
+          if (qs('#leelo-auto-advance').checked && leeloState.index < leeloState.order.length - 1 && recId === currentCardId) {
+            leeloState.index++;
+            renderLeelo();
+          }
+        });
+        leeloRecording = false;
+        qs('#leelo-rec').disabled = false;
+        qs('#leelo-stop').disabled = true;
+        qs('#leelo-tts').disabled = false;
+        qs('#leelo-play').disabled = !leeloLastBlob;
+        qs('#leelo-retry').disabled = !leeloLastBlob;
+      };
+      leeloT0 = performance.now();
+      leeloRecording = true;
+      qs('#leelo-rec').disabled = true;
+      qs('#leelo-stop').disabled = false;
+      qs('#leelo-tts').disabled = true;
+      qs('#leelo-play').disabled = true;
+      qs('#leelo-retry').disabled = true;
+      tickLeeloTimer();
+      leeloRecorder.start();
+    }).catch(() => {
+      alert('No se pudo acceder al micrófono');
+    });
+  }
+  function leeloStopRec() {
+    if (!leeloRecording) return;
+    leeloRecording = false;
+    cancelAnimationFrame(leeloRaf);
+    qs('#leelo-stop').disabled = true;
+    try { if (leeloRecorder && leeloRecorder.state !== 'inactive') leeloRecorder.stop(); } catch (e) {}
+  }
+  function tickLeeloTimer() {
+    const t = (performance.now() - leeloT0) / 1000;
+    const m = String(Math.floor(t / 60)).padStart(2, '0');
+    const s = String(Math.floor(t % 60)).padStart(2, '0');
+    qs('#leelo-timer').innerText = m + ':' + s;
+    leeloRaf = requestAnimationFrame(tickLeeloTimer);
+  }
+  function leeloPlay() {
+    if (!leeloLastBlob) return;
+    const url = URL.createObjectURL(leeloLastBlob);
+    const a = new Audio(url);
+    a.play();
+    a.onended = () => URL.revokeObjectURL(url);
+  }
+  function leeloRetry() {
+    leeloLastBlob = null;
+    qs('#leelo-play').disabled = true;
+    qs('#leelo-retry').disabled = true;
+    qs('#leelo-recent').classList.remove('on');
+    qs('#leelo-when').innerText = '';
+    qs('#leelo-audio').removeAttribute('src');
+  }
+  function leeloSpeak() {
+    const term = qs('#leelo-term').innerText || '';
+    const def = qs('#leelo-def').innerText || '';
+    const txt = term + (def ? ': ' + def : '');
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = /[áéíóúñ¿¡]/i.test(txt) ? 'es-ES' : 'en-US';
+    u.rate = 0.95;
+    u.pitch = 1.02;
+    speechSynthesis.speak(u);
+  }
+  function leeloPrev() {
+    if (leeloState.index <= 0) return;
+    leeloState.index--;
+    renderLeelo();
+  }
+  function leeloNext() {
+    if (leeloState.index >= leeloState.order.length - 1) return;
+    leeloState.index++;
+    renderLeelo();
+  }
+
   // === Navigation ===
   function switchView(name) {
-    ['sets','flash','learn','test','match','pair','comb','cloze','import'].forEach(v => {
+    ['sets','flash','leelo','learn','test','match','pair','comb','cloze','import'].forEach(v => {
       const sec = qs('#view-' + v);
       if (sec) sec.classList.add('hidden');
     });
     const active = qs('#view-' + name);
     if (active) active.classList.remove('hidden');
-    ['nav-sets','nav-flash','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import'].forEach(id => {
+    ['nav-sets','nav-flash','nav-leelo','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import'].forEach(id => {
       const btn = qs('#' + id);
       if (btn) btn.classList.remove('primary');
     });
@@ -2046,6 +2464,9 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     if (name === 'cloze') {
       // when entering cloze view, render card
       renderCloze();
+    }
+    if (name === 'leelo') {
+      initLeelo();
     }
 
     // Stop flash autoplay when leaving flash view
@@ -2150,12 +2571,12 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     qs('#scrim-cards').style.display = 'flex';
   }
   function addRow() {
-    const row = el('div', { className: 'row', style: 'gap:8px; align-items:flex-start' });
-    const termInput = el('input', { placeholder:'Término', style:'flex:1' });
-    const defInput = el('input', { placeholder:'Definición', style:'flex:1' });
+    const row = el('div', { className: 'row', style: 'gap:8px; align-items:flex-start; flex-wrap:wrap; width:100%' });
+    const termInput = el('input', { placeholder:'Término', style:'flex:1 1 250px; min-width:200px' });
+    const defInput = el('input', { placeholder:'Definición', style:'flex:1 1 250px; min-width:200px' });
     // Optional image input for manual cards
-    const imgInput = el('input', { type:'file', accept:'image/*', style:'flex:1' });
-    const delBtn = el('button', { innerText:'×', className:'danger', style:'padding:0 12px' });
+    const imgInput = el('input', { type:'file', accept:'image/*', style:'flex:1 1 250px; min-width:200px; max-width:100%' });
+    const delBtn = el('button', { innerText:'×', className:'danger', style:'padding:0 12px; flex:0 0 auto' });
     delBtn.onclick = () => { row.remove(); };
     row.appendChild(termInput);
     row.appendChild(defInput);
@@ -2256,6 +2677,18 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     if (e.code === 'ArrowLeft') flashPrev();
     if (e.code === 'ArrowRight') flashNext();
   });
+
+  // TTS for flashcards: speak the visible side of the card
+  qs('#flash-tts').onclick = () => {
+    const inner = qs('#flash-inner');
+    const isFlipped = inner.classList.contains('flipped');
+    const text = isFlipped ? qs('#flash-back').innerText : qs('#flash-front').innerText;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = /[áéíóúñ¿¡]/i.test(text) ? 'es-ES' : 'en-US';
+    utter.rate = 0.95;
+    utter.pitch = 1.02;
+    speechSynthesis.speak(utter);
+  };
 
   // (Removed global click handler for flash hard/easy)
 
