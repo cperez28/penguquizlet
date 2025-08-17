@@ -894,6 +894,323 @@
     }
 
   </style>
+
+<style>
+/* ====== MOBILE-FIRST HARDENED OVERRIDES (2025-08-16) ====== */
+
+/* Baseline: evitar zoom raro en iOS y desbordes laterales */
+html, body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+img, video, canvas { max-width: 100%; height: auto; display: block; }
+
+/* Tipografía y espaciado fluidos */
+html { font-size: clamp(14px, 1.9vw, 18px); }
+.container { padding: clamp(10px, 3vw, 24px); }
+
+/* Header: permite salto a dos filas en pantallas pequeñas */
+header { flex-wrap: wrap; gap: 8px; }
+.brand { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.user-bar { flex-wrap: wrap; gap: 8px; }
+
+/* Tabs: scroll horizontal sin romper layout */
+.tabs { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+.tabs > * { flex: 0 0 auto; }
+
+/* Grids elásticas */
+.grid { display: grid; gap: clamp(10px, 2.5vw, 16px); }
+.grid.cols-2 { grid-template-columns: 1fr; }
+@media (min-width: 768px){ .grid.cols-2 { grid-template-columns: 1fr 1fr; } }
+
+/* Cartas/flashcards dimensionadas al viewport */
+.flash-card, .flash-card2 { width: min(94vw, 820px); height: clamp(220px, 52svh, 360px); margin-left: auto; margin-right: auto; }
+.flash-inner { border-radius: 18px; }
+.term { font-size: clamp(1.15rem, 5.2vw, 2rem); line-height: 1.2; }
+.def  { font-size: clamp(1rem, 3.8vw, 1.25rem); line-height: 1.35; }
+
+/* Match / Memorama y Pair/Comb con columnas auto-fit */
+.match-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: clamp(8px, 2.2vw, 12px); }
+@media (min-width: 480px){ .match-grid{ grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } }
+.match-card{ min-height: clamp(110px, 18vw, 160px); }
+
+#pair-area, #comb-area { display: grid; grid-template-columns: 1fr; gap: clamp(8px, 2.2vw, 12px); }
+@media (min-width: 768px){ #pair-area, #comb-area { grid-template-columns: 1fr 1fr; } }
+
+/* Inputs accesibles en móvil */
+button, select, input, textarea { padding: clamp(6px, 1.8vw, 10px) clamp(10px, 2.6vw, 14px); border-radius: 12px; }
+#test-area .term{ font-size: clamp(1.05rem, 4.5vw, 1.5rem); }
+#test-area .def { font-size: clamp(0.95rem, 3.7vw, 1.1rem); }
+#leelo-card { padding: clamp(12px, 3vw, 20px); }
+
+/* Tablas y bloques largos desplazables */
+table, .table-wrap, pre, code { max-width: 100%; overflow-x: auto; display: block; }
+
+/* Panels con altura estable usando dvh (iOS16+), fallback vh */
+:root{ --header-total: clamp(64px, 12vw, 100px); }
+.panels{ min-height: calc(100dvh - var(--header-total) - 12px); }
+.panels .panel{ max-height: calc(100dvh - var(--header-total) - 20px); overflow:auto; }
+@supports not (height: 1dvh) {
+  .panels{ min-height: calc(var(--vh, 1vh) * 100 - var(--header-total) - 12px); }
+  .panels .panel{ max-height: calc(var(--vh, 1vh) * 100 - var(--header-total) - 20px); }
+}
+
+/* Overlays a pantalla completa: en móviles pequeños que no bloqueen navegación */
+@media (max-width: 480px){
+  .user-selection { position: static !important; min-height: auto; padding: 12px; }
+  .full-screen   { position: static !important; min-height: auto; padding: 12px; }
+}
+
+/* Evitar zoom en campos (iOS) */
+@supports (-webkit-touch-callout: none) { input, select, textarea { font-size: 16px; } }
+</style>
+
+
+<style>
+/* ==== FLASHCARDS RESPONSIVE FIX (2025-08-16) ==== */
+#view-flash .flash-wrap { min-height: 0 !important; }
+#view-flash .flash-card, #view-flash .flash-card2 {
+  width: min(96vw, 820px);
+  height: auto !important;
+  margin-left: auto; margin-right: auto;
+}
+#view-flash .flash-inner {
+  width: 100% !important;
+  aspect-ratio: 16 / 10;
+  height: auto !important;
+  max-height: min(60svh, 420px);
+}
+#view-flash .term { font-size: clamp(1.2rem, 5.2vw, 2rem); line-height: 1.25; }
+#view-flash .def  { font-size: clamp(1rem, 3.8vw, 1.25rem); line-height: 1.35; }
+#view-flash .row { flex-wrap: wrap; gap: 10px; }
+#view-flash #flash-grade-row > * { flex: 1 1 auto; min-width: 140px; }
+@media (max-width: 768px){
+  #view-flash.panel { padding-bottom: 14dvh; }
+}
+
+/* Léelo Tú: usar nuevos IDs si existen (no afecta si no se renombró) */
+#view-leelo #leelo-flash-wrap { min-height: 0 !important; }
+#view-leelo #leelo-flash-card { width: min(96vw, 820px); margin: 0 auto; }
+
+/* Botoneras genéricas en móvil */
+@media (max-width: 768px){
+  .controls, .actions, .toolbar, .buttons, .btn-group,
+  [class*="controls"], [class*="actions"], [class*="toolbar"], [class*="buttons"], [class*="btn-group"] {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+    justify-items: stretch;
+  }
+  .controls > *, .actions > *, .toolbar > *, .buttons > *, .btn-group > * { max-width: 100%; min-width: 0; }
+}
+</style>
+
+
+<style>
+/* ===== PATCH 2025-08-16: Flashcards + User Selection centering ===== */
+
+/* 1) FLASHCARDS: tarjeta realmente adaptable */
+#view-flash .flash-wrap { min-height: 0 !important; }
+
+#view-flash .flash-card, 
+#view-flash .flash-card2 {
+  width: min(96vw, 820px);
+  height: auto !important;
+  margin-left: auto; 
+  margin-right: auto;
+}
+
+#view-flash .flash-inner {
+  /* Sin alturas rígidas; deriva de ancho con aspect-ratio */
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 10;
+  /* Limitar para que no tape botones ni se desborde */
+  max-height: min(60svh, 420px);
+  /* Evitar que padding interno hinche el tamaño */
+  box-sizing: border-box;
+}
+
+/* Textos que siempre se ajustan */
+#view-flash .term{ font-size: clamp(1.15rem, 5.2vw, 2rem); line-height: 1.25; word-wrap: break-word; overflow-wrap:anywhere; }
+#view-flash .def { font-size: clamp(1rem, 3.8vw, 1.25rem); line-height: 1.35; word-wrap: break-word; overflow-wrap:anywhere; }
+
+/* Botoneras: wrap y sin desbordes */
+#view-flash .row { flex-wrap: wrap; gap: 10px; }
+#view-flash #flash-grade-row > * { flex: 1 1 auto; min-width: 140px; }
+
+/* Paisaje con altura baja: prioriza altura de la tarjeta para no salirse */
+@media (max-height: 520px) and (orientation: landscape){
+  #view-flash .flash-inner { max-height: 48svh; aspect-ratio: 16 / 9; }
+}
+
+/* 2) QUIÉN VA A ESTUDIAR: centrado vertical + tarjetas adaptables */
+#user-selection{
+  min-height: calc(100dvh - var(--header-total, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;   /* centrado vertical real */
+  gap: clamp(10px, 2.6vw, 18px);
+  padding: max(env(safe-area-inset-top), 12px) 12px 16px;
+  box-sizing: border-box;
+}
+
+/* Título / pregunta centrado y sin corte */
+#user-selection .user-selection-header{
+  width: 100%;
+  text-align: center;
+  margin: 0;
+  padding: 0 6px;
+}
+
+/* Grid de usuarios adaptable */
+#user-grid{
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(12px, 3vw, 20px);
+  align-items: stretch;
+}
+
+/* Tarjetas de usuario escalables */
+#user-grid .user-card{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(10px, 2.6vw, 16px);
+  border-radius: 14px;
+  min-height: clamp(120px, 22vh, 220px);
+  box-sizing: border-box;
+}
+
+#user-grid .user-card img,
+#user-grid .user-card .avatar{
+  width: clamp(48px, 14vw, 84px);
+  height: clamp(48px, 14vw, 84px);
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+#user-grid .user-card .name{
+  font-size: clamp(1rem, 3.4vw, 1.2rem);
+  text-align: center;
+  word-break: break-word;
+}
+
+#user-grid .user-card .meta{
+  font-size: clamp(0.85rem, 3vw, 1rem);
+  text-align: center;
+}
+
+/* Evitar cortes por teclados/notch en móviles */
+@supports not (height: 1dvh){
+  #user-selection{ min-height: calc(var(--vh, 1vh) * 100 - var(--header-total, 0px)); }
+}
+
+/* ======= ANTI-OVERFLOW FLASH/LÉELO (drop-in) ======= */
+
+/* 0) Nunca permitas scroll lateral por sombras/transform */
+html, body { overflow-x: hidden; }
+
+/* 1) Los contenedores no pueden exceder el ancho disponible */
+#view-flash .flash-wrap,
+#view-flash .flash-card,
+#view-flash .flash-inner,
+#view-leelo #leelo-flash-wrap,
+#view-leelo #leelo-flash-card {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 2) Ajusta el ancho relativo: 92vw evita sumar padding exterior al viewport */
+#view-flash .flash-card,
+#view-leelo #leelo-flash-card {
+  width: min(92vw, 820px);      /* antes 96vw; 92vw elimina el “empujón” a la derecha */
+  margin-left: auto;
+  margin-right: auto;
+  contain: layout paint;        /* aísla la pintura para que no desborde */
+  overflow: clip;               /* recorta cualquier pixel suelto por transform */
+}
+
+/* 3) El “lienzo” de la tarjeta recorta todo lo que se salga por flip 3D */
+#view-flash .flash-inner,
+#view-leelo #leelo-flash-card {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16/10;          /* puedes usar 3/2 si te gusta más alta */
+  max-height: min(60svh, 420px);
+  padding: clamp(10px, 3.2vw, 18px);
+  border-radius: 16px;
+  overflow: hidden;             /* crucial: recorta caras durante el giro */
+}
+
+/* 4) Caras de la tarjeta: siempre dentro, sin “estirar” ancho fijo */
+#view-flash .flash-face,
+#view-leelo .flash-face {
+  position: absolute;
+  inset: 0;                     /* ocupa exactamente el rectángulo del inner */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: inherit;
+  box-sizing: border-box;
+  max-width: 100%;
+  backface-visibility: hidden;
+}
+
+/* 5) Texto: no rompas el layout por palabras largas */
+#view-flash .term, #view-flash .def,
+#view-leelo #leelo-term, #view-leelo #leelo-def {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+/* 6) Botoneras: que hagan wrap y no empujen la tarjeta */
+#flash-grade-row, #leelo-controls {
+  flex-wrap: wrap;
+}
+#flash-grade-row > * { flex: 1 1 140px; }
+#leelo-controls > * { flex: 1 1 140px; }
+
+/* 7) Paisaje con poca altura: relación más apaisada y menor altura */
+@media (max-height: 520px) and (orientation: landscape){
+  #view-flash .flash-inner,
+  #view-leelo #leelo-flash-card {
+    aspect-ratio: 16/9;
+    max-height: 48svh;
+  }
+}
+/* === PROFILE DROPDOWN ALWAYS ON TOP === */
+header { z-index: 2000; }              /* el header crea el stacking context más alto */
+.tabs   { z-index: 1900; }             /* las tabs quedan por debajo del menú */
+#user-menu{
+  z-index: 2100 !important;            /* el menú por encima de todo dentro del header */
+  position: absolute;                  /* comportamiento normal en desktop */
+  right: 0;
+  top: calc(100% + 10px);
+  width: 300px;
+  max-width: 92vw;
+  max-height: min(70vh, 520px);        /* si es largo, que scrollee */
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* En pantallas chicas, úsalo fijo para que nunca lo tape nada */
+@media (max-width: 640px){
+  #user-menu{
+    position: fixed;
+    right: 12px;
+    top: calc(env(safe-area-inset-top, 0px) + 60px);
+    /* si prefieres centrarlo en móvil, comenta las 2 líneas de arriba y usa: 
+       left: 50%; transform: translateX(-50%); right: auto; */
+  }
+}
+
+</style>
+
 </head>
 <body>
   <!-- User Selection Screen -->
@@ -906,7 +1223,6 @@
       <div class="user-grid" id="user-grid">
         <!-- Users will be populated here -->
       </div>
-    </div>
   </div>
   </div>
 
@@ -985,15 +1301,80 @@
 
     <!-- Flashcards view -->
     <section id="view-flash" class="panel hidden">
+      <!-- SCOPED STYLES: solo afectan a #view-flash -->
+      <style>
+        /* ===== FLASHCARDS: responsive y sin desbordes (scope: #view-flash) ===== */
+        #view-flash { --flash-max-h: 420px; }
+    
+        /* Cabecera: que haga wrap en pantallas pequeñas */
+        @media (max-width: 768px){
+          #view-flash .row.space-between{ flex-wrap: wrap; row-gap: 10px; }
+          #view-flash .row.space-between > .row{
+            flex: 1 1 100%;
+            justify-content: center;
+          }
+          #view-flash .row.space-between select,
+          #view-flash .row.space-between button{
+            flex: 1 1 auto;
+            min-width: 140px;
+          }
+        }
+    
+        /* Contenedor de la tarjeta: centra y evita alturas rígidas */
+        #view-flash .flash-wrap{
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: clamp(8px, 2.4vw, 16px);
+          min-height: 0 !important;
+        }
+    
+        /* Tarjeta y contenido: ancho fluido, altura derivada del ancho */
+        #view-flash .flash-card{
+          width: min(96vw, 860px);
+          height: auto !important;
+          margin: 0 auto;
+        }
+        #view-flash .flash-inner{
+          width: 100% !important;
+          height: auto !important;             /* sin altura fija */
+          aspect-ratio: 16 / 10;               /* puedes cambiar a 3/2 si prefieres */
+          max-height: min(60svh, var(--flash-max-h));  /* límite sensible en móvil */
+          box-sizing: border-box;
+        }
+    
+        /* Texto que se adapta y no se sale */
+        #view-flash .term{ 
+          font-size: clamp(1.15rem, 5.2vw, 2rem); 
+          line-height: 1.25; 
+          overflow-wrap: anywhere; 
+        }
+        #view-flash .def{ 
+          font-size: clamp(1rem, 3.8vw, 1.25rem); 
+          line-height: 1.35; 
+          overflow-wrap: anywhere; 
+        }
+    
+        /* Botonera: envolvente y sin desbordes */
+        #flash-grade-row{ flex-wrap: wrap; }
+        #flash-grade-row > button{ flex: 1 1 140px; }
+    
+        /* En paisajes de poca altura, usa relación más apaisada */
+        @media (max-height: 520px) and (orientation: landscape){
+          #view-flash .flash-inner{ max-height: 48svh; aspect-ratio: 16 / 9; }
+        }
+      </style>
+    
       <div class="row space-between">
         <h3 class="section-title">Flashcards</h3>
         <div class="row" style="gap: 6px; flex-wrap: wrap">
           <select id="select-flash"></select>
           <button id="flash-reverse" class="ghost" title="Intercambiar Term/Def">Term↔Def</button>
           <button id="flash-shuffle" class="ghost" title="Aleatorizar">Aleatorio</button>
-        <button id="flash-auto" class="ghost" title="Activar auto-reproducción">Auto</button>
+          <button id="flash-auto" class="ghost" title="Activar auto-reproducción">Auto</button>
         </div>
       </div>
+    
       <div class="flash-wrap" id="flash-wrap">
         <div class="flash-card" id="flash-card">
           <div class="flash-inner" id="flash-inner">
@@ -1002,6 +1383,7 @@
           </div>
         </div>
       </div>
+    
       <div class="row" id="flash-grade-row" style="gap: 10px; justify-content: center; margin-top: 20px">
         <button id="flash-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
         <button id="flash-show" class="primary">Voltear</button>
@@ -1009,49 +1391,199 @@
         <button id="flash-next" class="ghost" title="Siguiente Flashcard">Siguiente</button>
       </div>
       <p class="muted" style="text-align:center">Atajos: ← → · Espacio · Swipe para cambiar</p>
+    
+      <!-- Ajuste dinámico de altura disponible (solo #view-flash) -->
+      <script>
+        (function(){
+          var sec = document.getElementById('view-flash');
+          if(!sec) return;
+    
+          function vh(){ return (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight; }
+    
+          function relayout(){
+            var topRow = sec.querySelector('.row.space-between');
+            var grade  = document.getElementById('flash-grade-row');
+            var help   = sec.querySelector('.muted');
+            var used   = 0;
+    
+            if(topRow) used += topRow.offsetHeight || 0;
+            if(grade)  used += grade.offsetHeight  || 0;
+            if(help)   used += help.offsetHeight   || 0;
+    
+            // margen de seguridad y paddings internos
+            used += 40;
+    
+            var avail = Math.max(220, vh() - used);
+            sec.style.setProperty('--flash-max-h', Math.round(avail) + 'px');
+          }
+    
+          // Recalcular en cambios de tamaño/orientación y cuando cambie el layout
+          window.addEventListener('resize', relayout);
+          window.addEventListener('orientationchange', relayout);
+    
+          // Observa cambios dentro de la sección (por ejemplo, textos largos, botones en varias filas)
+          try{
+            new ResizeObserver(relayout).observe(sec);
+          }catch(e){ /* navegadores antiguos */ }
+    
+          relayout();
+        })();
+      </script>
     </section>
+    
 
     <!-- Leelo Tú view -->
-    <section id="view-leelo" class="panel hidden">
-      <div class="row space-between">
-        <h3 class="section-title">Léelo Tú</h3>
-        <div class="row" style="gap:6px; flex-wrap:wrap">
-          <select id="select-leelo"></select>
-          <label class="pill"><input type="checkbox" id="leelo-auto"> Auto‑grabar al abrir</label>
-          <label class="pill"><input type="checkbox" id="leelo-auto-advance"> Avanzar al guardar</label>
-        </div>
-      </div>
-      <div id="leelo-card" class="panel" style="margin-top:12px; text-align:center; padding:20px;">
-        <!-- La tarjeta-->
-        
-        <div class="flash-card2" id="flash-wrap">
-          <div class="flash-inner" id="flash-card">
-              <div class="term" id="leelo-term">—</div>
-              <div class="def" id="leelo-def">Seleccione un set.</div>
-          </div>
-        </div>
+<section id="view-leelo" class="panel hidden">
+  <!-- STYLES scopeados solo a #view-leelo -->
+  <style>
+    /* ===== LÉELO TÚ: responsive y sin desbordes (scope: #view-leelo) ===== */
+    #view-leelo { --leelo-max-h: 420px; }
 
-        <div class="row" id="leelo-controls" style="justify-content:center; gap:10px; margin-top:20px;">
-          <button id="leelo-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
-          <button id="leelo-rec" class="leelo-btn" title="Grabar">🎙️</button>
-          <button id="leelo-stop" class="leelo-btn" title="Detener" disabled>⏹️</button>
-          <button id="leelo-play" class="leelo-btn" title="Escuchar mi lectura" disabled>▶️</button>
-          <button id="leelo-retry" class="leelo-btn" title="Repetir" disabled>🔄</button>
-          <button id="leelo-tts" class="leelo-btn" title="Lectura modelo">📢</button>
-          <button id="leelo-next" class="ghost" title="Siguiente Flashcard">Siguiente</button>
-        </div>
-        <!-- Timer and score row -->
-        <div class="row" style="justify-content:center; gap:12px; margin-top:12px;">
-          <span class="pill" id="leelo-timer" style="font-weight:600">00:00</span>
-          <span class="pill" id="leelo-score" style="font-weight:600">0 pts</span>
-        </div>
-        <div id="leelo-recent" class="sec" style="text-align:center; margin-top:14px;">
-          <audio id="leelo-audio" controls style="width:260px;"></audio>
-          <div class="muted" id="leelo-when"></div>
-        </div>
-           
+    /* Cabecera: permite wrap ordenado en móvil */
+    @media (max-width: 768px){
+      #view-leelo .row.space-between{ flex-wrap: wrap; row-gap: 10px; }
+      #view-leelo .row.space-between > .row{
+        flex: 1 1 100%;
+        justify-content: center;
+      }
+      #view-leelo .row.space-between select,
+      #view-leelo .row.space-between label{
+        flex: 1 1 auto;
+        min-width: 160px;
+      }
+    }
+
+    /* Tarjeta contenedora: que respire y centre contenido */
+    #leelo-card{
+      margin-top: 12px;
+      text-align: center;
+      padding: clamp(12px, 3vw, 20px) !important;
+      box-sizing: border-box;
+    }
+
+    /* Tarjeta y contenido: ancho fluido, altura derivada del ancho */
+    #leelo-flash-wrap{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(8px, 2.4vw, 16px);
+      min-height: 0 !important;
+    }
+    #leelo-flash-card{
+      width: min(96vw, 860px);
+      height: auto !important;
+      margin: 0 auto;
+      /* El inner es el propio #leelo-flash-card en tu estructura */
+      aspect-ratio: 16 / 10;                  /* cambia a 3/2 si prefieres más alta */
+      max-height: min(60svh, var(--leelo-max-h));
+      box-sizing: border-box;
+    }
+
+    /* Textos que se ajustan */
+    #leelo-term{ 
+      font-size: clamp(1.15rem, 5.2vw, 2rem); 
+      line-height: 1.25; 
+      overflow-wrap: anywhere; 
+    }
+    #leelo-def{ 
+      font-size: clamp(1rem, 3.8vw, 1.25rem); 
+      line-height: 1.35; 
+      overflow-wrap: anywhere; 
+    }
+
+    /* Botonera: envolver y sin desbordes */
+    #leelo-controls{ flex-wrap: wrap; }
+    #leelo-controls > .leelo-btn,
+    #leelo-controls > .ghost{
+      flex: 1 1 140px;
+      min-height: 42px;
+    }
+
+    /* Filas de timer/score y recientes, centradas y fluidas */
+    #view-leelo .sec, 
+    #view-leelo .muted { word-break: break-word; }
+    #leelo-audio{ width: min(92vw, 420px); }
+
+    /* En paisajes de poca altura, prioriza relación más apaisada */
+    @media (max-height: 520px) and (orientation: landscape){
+      #leelo-flash-card{ max-height: 48svh; aspect-ratio: 16 / 9; }
+    }
+  </style>
+
+  <div class="row space-between">
+    <h3 class="section-title">Léelo Tú</h3>
+    <div class="row" style="gap:6px; flex-wrap:wrap">
+      <select id="select-leelo"></select>
+      <label class="pill"><input type="checkbox" id="leelo-auto"> Auto-grabar al abrir</label>
+      <label class="pill"><input type="checkbox" id="leelo-auto-advance"> Avanzar al guardar</label>
+    </div>
+  </div>
+
+  <div id="leelo-card" class="panel" style="margin-top:12px; text-align:center; padding:20px;">
+    <!-- La tarjeta-->
+    <div class="flash-card2" id="leelo-flash-wrap">
+      <div class="flash-inner" id="leelo-flash-card">
+          <div class="term" id="leelo-term">—</div>
+          <div class="def" id="leelo-def">Seleccione un set.</div>
       </div>
-    </section>
+    </div>
+
+    <div class="row" id="leelo-controls" style="justify-content:center; gap:10px; margin-top:20px;">
+      <button id="leelo-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
+      <button id="leelo-rec" class="leelo-btn" title="Grabar">🎙️</button>
+      <button id="leelo-stop" class="leelo-btn" title="Detener" disabled>⏹️</button>
+      <button id="leelo-play" class="leelo-btn" title="Escuchar mi lectura" disabled>▶️</button>
+      <button id="leelo-retry" class="leelo-btn" title="Repetir" disabled>🔄</button>
+      <button id="leelo-tts" class="leelo-btn" title="Lectura modelo">📢</button>
+      <button id="leelo-next" class="ghost" title="Siguiente Flashcard">Siguiente</button>
+    </div>
+
+    <!-- Timer and score row -->
+    <div class="row" style="justify-content:center; gap:12px; margin-top:12px;">
+      <span class="pill" id="leelo-timer" style="font-weight:600">00:00</span>
+      <span class="pill" id="leelo-score" style="font-weight:600">0 pts</span>
+    </div>
+
+    <div id="leelo-recent" class="sec" style="text-align:center; margin-top:14px;">
+      <audio id="leelo-audio" controls style="width:260px;"></audio>
+      <div class="muted" id="leelo-when"></div>
+    </div>
+  </div>
+
+  <!-- Ajuste dinámico de altura disponible (solo #view-leelo) -->
+  <script>
+    (function(){
+      var sec = document.getElementById('view-leelo');
+      if(!sec) return;
+      function vh(){ return (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight; }
+
+      function relayout(){
+        var header = sec.querySelector('.row.space-between');
+        var controls = document.getElementById('leelo-controls');
+        var timerRow = sec.querySelector('#leelo-card > .row:nth-of-type(2)'); // la fila de timer/score
+        var recent   = document.getElementById('leelo-recent');
+
+        var used = 0;
+        if(header)  used += header.offsetHeight || 0;
+        if(controls)used += controls.offsetHeight || 0;
+        if(timerRow)used += timerRow.offsetHeight || 0;
+        if(recent)  used += recent.offsetHeight || 0;
+
+        used += 48; // margen/paddings seguros
+
+        var avail = Math.max(220, vh() - used);
+        sec.style.setProperty('--leelo-max-h', Math.round(avail) + 'px');
+      }
+
+      window.addEventListener('resize', relayout);
+      window.addEventListener('orientationchange', relayout);
+      try{ new ResizeObserver(relayout).observe(sec); }catch(e){}
+
+      relayout();
+    })();
+  </script>
+</section>
+
 
     <!-- Learn view -->
     <section id="view-learn" class="panel hidden">
@@ -3943,6 +4475,13 @@ window.bindExportButtons = bindExportButtons;
   if (pill){ pill.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); }); }
   if (menu){ menu.addEventListener('click', (e)=> e.stopPropagation()); }
   document.addEventListener('click', ()=> closeMenu());
+document.addEventListener('click', function(e){
+  if (e.target && (e.target.id === 'profile-cancel' || (e.target.closest && e.target.closest('#profile-cancel')))) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+  }
+}, { capture: true });
 
   if (avatarI){
     avatarI.onchange = async (e)=>{
@@ -4027,5 +4566,14 @@ window.bindExportButtons = bindExportButtons;
   });
 })();
 </script>
+
+<script>
+// Mobile 1% viewport height fix (sets --vh)
+(function(){
+  function setVh(){ document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px'); }
+  setVh(); window.addEventListener('resize', setVh);
+})();
+</script>
+
 </body>
 </html>
