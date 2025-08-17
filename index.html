@@ -31,7 +31,7 @@
       font-size: 18px;
     }
     .container {
-      max-width: 1100px;
+      max-width: 960px;
       margin: auto;
       padding: 24px;
     }
@@ -557,17 +557,403 @@
     color: #fff;
     line-height: 1.75;
   }
-</style>
+
+    /* === Token Drag styles === */
+    .drag-zone {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 64px;
+      padding: 12px;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      background: #fff;
+    }
+    .drag-zone.drop-target {
+      background: #fff5f8;
+      border-color: var(--accent);
+    }
+    .drag-chip {
+      background: #ffeef8;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 1rem;
+      cursor: grab;
+      user-select: none;
+      box-shadow: var(--shadow);
+    }
+    .drag-ok  { border-color: var(--success); background: #f0fff4; }
+    .drag-bad { border-color: var(--danger);  background: #fff5f5; }
+
+
+    /* === Histogram bars for Test report === */
+    .chart .bar {
+      width: 72px;
+      background: var(--accent3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: height .3s ease;
+    }
+    .chart .bar .label {
+      font-size: 12px;
+      line-height: 1.2;
+      padding: 4px 6px;
+      color: var(--ink);
+      text-align: center;
+      word-break: break-word;
+    }
+
+    /* === User Selection Screen === */
+    .user-selection {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, var(--bg), var(--panel));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .user-selection.hidden {
+      display: none;
+    }
+    .user-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      max-width: 800px;
+      padding: 24px;
+    }
+    .user-card {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent);
+      box-shadow: 0 20px 40px rgba(255, 118, 185, 0.4);
+    }
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+      margin-bottom: 16px;
+      font-weight: bold;
+    }
+    .user-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .user-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .add-user-card {
+      border: 2px dashed var(--border);
+      background: transparent;
+    }
+    .add-user-card:hover {
+      border-color: var(--accent);
+      background: var(--chip);
+    }
+    .user-selection-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .user-selection-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .user-selection-subtitle {
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+    .current-user-indicator {
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    
+
+.user-card{ position:relative; }
+.user-del{
+  position:absolute; top:8px; right:8px;
+  width:28px; height:28px; line-height:26px;
+  border-radius:50%; border:1px solid var(--border);
+  background:#fff; color:#d11; font-weight:700; cursor:pointer;
+}
+.user-del:hover{ background:#fee; }
+
+
+    .user-bar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .user-bar .spacer{ flex:1 1 auto; }
+
+
+    .user-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      background:#fff; border:1px solid var(--border); color:var(--ink);
+      font-weight:600;
+    }
+    .user-pill .dot{
+      width:20px; height:20px; border-radius:50%; background:var(--accent);
+      display:inline-block;
+    }
+
+
+    /* --- Responsive pill nav --- */
+    .tabs{ position:sticky; top:0; background:transparent; z-index:5; }
+    .tab-scroll{
+      display:flex; align-items:center; gap:10px;
+      overflow-x:auto; padding:8px 0 16px 0;
+      scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+    }
+    .tab-scroll > *{ scroll-snap-align:center; white-space:nowrap; flex:0 0 auto; }
+    .tab-scroll::-webkit-scrollbar{ height:8px; }
+    .tab-scroll::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+    /* Keep primary pills steady height */
+    .tabs .pill{ line-height:1; }
+
+
+    header{
+      position:sticky; top:0; z-index:100;
+      background:linear-gradient(180deg, var(--bg), var(--panel));
+      padding:8px 16px;
+    }
+    .tabs{
+      position:sticky; top:56px; /* below header */
+      background:linear-gradient(180deg, var(--bg), var(--panel));
+      z-index:90;
+    }
+
+
+    /* --- User controls segmented pill --- */
+    .user-controls{ display:flex; align-items:center; gap:10px; }
+    .segmented{
+      display:inline-flex; border:1px solid var(--border); border-radius:999px; background:#fff;
+      overflow:hidden;
+      box-shadow:0 1px 2px rgba(0,0,0,.04);
+    }
+    .segmented .seg-item{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border:0; background:transparent; cursor:pointer;
+      font-weight:600; color:var(--ink);
+    }
+    .segmented .seg-item + .seg-item{ border-left:1px solid var(--border); }
+    .segmented .seg-item:hover{ background:#fafafa; }
+    .segmented .name{ max-width:15ch; overflow:hidden; text-overflow:ellipsis; }
+    .segmented .dot{ width:14px; height:14px; border-radius:999px; background:var(--accent); }
+    @media (max-width:640px){
+      .segmented .name{ max-width:10ch; }
+      header{ padding:6px 12px; }
+    }
+
+
+    /* --- Brand sizing --- */
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand .pengu-img{ width:48px; height:48px; border-radius:50%; object-fit:cover; }
+    .brand span{ font-size:1.6rem; font-weight:800; letter-spacing:.2px; }
+    @media (max-width:640px){
+      .brand .pengu-img{ width:42px; height:42px; }
+      .brand span{ font-size:1.35rem; }
+    }
+
+    /* --- User menu (profile) --- */
+    .user-controls{ position:relative; }
+    #user-menu{
+      position:absolute; right:0; top:calc(100% + 8px);
+      min-width:260px; padding:12px;
+      background:#fff; border:1px solid var(--border); border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08); display:none;
+    }
+    #user-menu.open{ display:block; }
+    #user-menu h4{ margin:0 0 8px 0; font-size:14px; color:var(--muted); }
+    #user-menu .field{ display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+    #user-menu label{ font-size:12px; color:var(--muted); }
+    #user-menu input{ border:1px solid var(--border); border-radius:10px; padding:8px; }
+    #user-menu .row-actions{ display:flex; gap:8px; justify-content:flex-end; }
+    #user-menu .btn{ border:1px solid var(--border); background:#fff; border-radius:999px; padding:8px 12px; cursor:pointer; }
+    #user-menu .btn.primary{ background:var(--accent); color:#fff; border-color:transparent; }
+
+
+    .segmented .caret{ font-size:10px; opacity:.6; margin-left:4px; }
+
+
+    /* --- Profile dropdown --- */
+    .user-controls{ position:relative; }
+    #user-menu{
+      position:absolute; right:0; top:calc(100% + 10px);
+      width:300px; max-width:92vw;
+      padding:14px; background:#fff; border:1px solid var(--border); border-radius:14px;
+      box-shadow:0 12px 28px rgba(0,0,0,.12);
+      display:none;
+    }
+    #user-menu.open{ display:block; }
+    #user-menu h4{ margin:0 0 10px 0; font-size:14px; color:var(--muted); }
+    #user-menu .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    #user-menu label{ font-size:12px; color:var(--muted); }
+    #user-menu input, #user-menu select{
+      border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:14px;
+    }
+    #user-menu .row{ display:flex; gap:8px; }
+    #user-menu .row > *{ flex:1 1 0; }
+    #user-menu .avatar-uploader{ display:flex; align-items:center; gap:10px; }
+    #user-menu .avatar-preview{ width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--border); background:#f8f8f8; }
+    #user-menu .row-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+    #user-menu .btn{ border:1px solid var(--border); background:#fff; border-radius:999px; padding:8px 12px; cursor:pointer; }
+    #user-menu .btn.primary{ background:var(--accent); color:#fff; border-color:transparent; }
+    #user-menu .danger{ color:#b42318; border-color:#f3d2d0; }
+    #user-menu hr{ border:none; border-top:1px solid var(--border); margin:10px 0; }
+
+
+    /* --- Compact, single header with centered width --- */
+    header{ position:sticky; top:0; z-index:100; background:linear-gradient(180deg, var(--bg), var(--panel)); }
+    header > .user-bar, header > .tabs{ max-width: 960px; margin: 0 auto; padding: 8px 12px; }
+    /* Reduce vertical space */
+    .user-bar{ gap:12px; }
+    .tabs{ padding-top: 0; }
+    .tab-scroll{ padding:6px 0 10px; gap:8px; }
+    /* Pills consistent & compact */
+    .pill, .seg-item{ padding:6px 10px; }
+    .segmented .seg-item + .seg-item{ border-left:1px solid var(--border); }
+    /* On small screens keep it compact but scrollable */
+    @media (max-width: 640px){
+      header > .user-bar, header > .tabs{ padding:6px 10px; }
+      .tab-scroll{ padding:4px 0 8px; gap:6px; }
+    }
+
+
+    #user-menu{ visibility:hidden; opacity:0; transition:opacity .12s ease; }
+    #user-menu.open{ display:block; visibility:visible; opacity:1; }
+
+
+    /* --- Focused mode card --- */
+    .panels{ max-width: 960px; margin: 10px auto 24px; padding: 0 12px; }
+    .panels .panel{ background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.06); padding:16px; }
+    .tabs{ z-index: 120; box-shadow: 0 1px 0 rgba(0,0,0,.05); background:linear-gradient(180deg, var(--bg), var(--panel)); }
+
+
+    .segmented{ gap:0; }
+    .segmented .seg-item{ padding:6px 10px; }
+    .segmented .seg-item + .seg-item{ border-left:1px solid var(--border); }
+
+
+    :root{ --header-total: 100px; }
+    .panels{ min-height: calc(100dvh - var(--header-total) - 16px); }
+    .panels .panel{ max-height: calc(100dvh - var(--header-total) - 24px); overflow:auto; }
+    @supports not (height: 1dvh){
+      .panels{ min-height: calc(100vh - var(--header-total) - 16px); }
+      .panels .panel{ max-height: calc(100vh - var(--header-total) - 24px); }
+    }
+
+
+    /* --- Focus mode --- */
+    #focus-toggle{ margin-left:8px; border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:#fff; cursor:pointer; }
+    #focus-toggle:hover{ background:#fafafa; }
+    body.focus-mode header{ display:none; }
+    body.focus-mode .panels{ max-width: min(1200px, 96vw); margin: 8px auto; min-height: calc(100dvh - 8px); }
+    body.focus-mode .panels .panel{ max-height: calc(100dvh - 16px); }
+    .focus-hint{ position:fixed; right:12px; bottom:12px; background:#000; color:#fff; opacity:.7; border-radius:999px; padding:6px 12px; font-size:12px; z-index:1000; display:none; }
+    body.focus-mode .focus-hint{ display:block; }
+    @supports not (height: 1dvh){
+      body.focus-mode .panels{ min-height: calc(100vh - 8px); }
+      body.focus-mode .panels .panel{ max-height: calc(100vh - 16px); }
+    }
+
   </style>
 </head>
 <body>
+  <!-- User Selection Screen -->
+  <div id="user-selection" class="user-selection">
+    <div>
+      <div class="user-selection-header">
+        <h1 class="user-selection-title">¿Quién va a estudiar?</h1>
+        <p class="user-selection-subtitle">Selecciona tu perfil para continuar</p>
+      </div>
+      <div class="user-grid" id="user-grid">
+        <!-- Users will be populated here -->
+      </div>
+    </div>
+  </div>
+  </div>
+
   <!-- Confetti canvas for celebrations -->
   <canvas id="confetti"></canvas>
-  <div class="container">
+  <div class="container" id="main-app" style="display: none;">
     <header>
-      <div class="row" style="gap: 12px">
+      <div class="user-bar">
         <div class="brand"><img src="penguin.png" alt="Pengu" class="pengu-img"><span>Pengu Quizlet</span></div>
-        <span class="pill">Sin internet · LocalStorage</span>
+        <div class="spacer"></div>
+        <div class="user-controls"><div class="segmented"><button id="active-user-pill" class="seg-item" type="button"><span class="dot"></span><span class="name"></span><span class="caret">▼</span></button><button id="change-user-btn" class="seg-item" type="button">Cambiar</button></div>
+      
+      <div id="user-menu" aria-hidden="true">
+        <h4>Perfil de estudiante</h4>
+        <div class="field avatar-uploader">
+          <img id="profile-avatar-preview" class="avatar-preview" alt="avatar"/>
+          <input id="profile-avatar" type="file" accept="image/*"/>
+          <input id="profile-color" type="color" title="Color"/>
+        
+<button id="focus-toggle" class="seg-item" type="button" title="Vista enfocada (↗)">↗</button>
+</div>
+        <div class="field">
+          <label>Nombre</label>
+          <input id="profile-name" type="text" placeholder="Nombre"/>
+        </div>
+        <div class="row">
+          
+      </div>
+<div class="field">
+          <label>Email</label>
+          <input id="profile-email" type="email" placeholder="correo@dominio.com"/>
+        </div>
+        
+  <div class="field">
+    <label>Institución</label>
+    <input id="profile-inst" type="text" placeholder="Institución"/>
+  </div>
+  <div class="field">
+    <label>Grado/Sección</label>
+    <input id="profile-grade" type="text" placeholder="Grado o sección"/>
+  </div>
+<div class="row-actions">
+          <button id="profile-cancel" class="btn">Cerrar</button>
+          <button id="profile-save" class="btn primary">Guardar</button>
+        </div>
+      </div>
+</div>
       </div>
       <div class="tabs">
         <button id="nav-sets" class="primary">Sets</button>
@@ -578,6 +964,7 @@
         <button id="nav-memory">Memorama</button>
         <button id="nav-comb">Combinar</button>
         <button id="nav-pair">Parear</button>
+        <button id="nav-drag">Token Drag</button>
         <button id="nav-cloze">Elaborar</button>
         <button id="nav-import">Importar/Exportar</button>
       </div>
@@ -723,6 +1110,35 @@
         </div>
         <div class="chart" id="report-chart"></div>
       </div>
+    
+      <div id="test-export" class="panel hidden" style="margin-top:12px">
+        <h4 style="margin:0 0 8px 0">Exportar resultados</h4>
+        <div class="row" style="gap:8px; flex-wrap:wrap">
+          <button id="test-pdf" class="primary">Descargar PDF</button>
+          <button id="test-email" class="ghost">Enviar por Email</button>
+        </div>
+        <div id="test-email-form" class="row hidden" style="gap:8px; margin-top:8px; flex-wrap:wrap">
+          <input id="nameInput" type="text" placeholder="Nombre" style="min-width:200px"/>
+          <input id="emailInput" type="email" placeholder="Correo" style="min-width:240px"/>
+          <button id="test-email-send" class="primary">Enviar</button>
+          <span id="emailStatus" class="muted"></span>
+        </div>
+        <!-- Formulario oculto para EmailJS (adjunta PDF) -->
+        <form id="emailjsForm" class="hidden" enctype="multipart/form-data">
+          <input name="to_email" type="email"/>
+          <input name="to" type="email"/>
+          <input name="user_email" type="email"/>
+          <input name="reply_to" type="email"/>
+          <input name="recipient" type="email"/>
+          <input name="email" type="email"/>
+          <input name="toAddress" type="email"/>
+          <input name="to_name" type="text"/>
+          <input name="from_name" type="text"/>
+          <input name="score" type="text"/>
+          <input name="date" type="text"/>
+          <input name="my_file" id="emailAttachment" type="file" accept="application/pdf"/>
+        </form>
+      </div>
     </section>
 
     <!-- Memory match view -->
@@ -771,6 +1187,37 @@
       <div id="comb-area" class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px"></div>
       <div id="comb-info" class="row" style="gap:8px; margin-top:8px">
         <span class="pill" id="comb-progress">0/0</span>
+      </div>
+    </section>
+
+
+    <!-- Token Drag (reordenar definición por fragmentos) -->
+    <section id="view-drag" class="panel hidden">
+      <div class="row space-between">
+        <h3 class="section-title">Token Drag</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <select id="select-drag"></select>
+          <label class="pill">Trozos
+            <input id="drag-partitions" type="number" value="4" min="2" max="20" style="width:60px; margin-left:6px">
+          </label>
+        </div>
+      </div>
+
+      <div id="drag-current-term" class="term" style="text-align:center; margin-top:6px">—</div>
+
+      <div id="drag-tokens" class="drag-zone" style="margin-top:12px"></div>
+      <div id="drag-drop" class="drag-zone drop-target" style="margin-top:10px"></div>
+
+      <div id="drag-message" class="muted" style="text-align:center; margin-top:8px"></div>
+
+      <div class="row nav-buttons" style="justify-content:space-between; margin-top:12px">
+        <button id="drag-prev" class="ghost">⬅ Anterior</button>
+        <button id="drag-check" class="primary">✅ Comprobar</button>
+        <button id="drag-next" class="ghost">Siguiente ➡</button>
+      </div>
+
+      <div class="row" style="gap:8px; margin-top:10px">
+        <span class="pill" id="drag-progress">0/0</span>
       </div>
     </section>
 
@@ -837,6 +1284,21 @@
         <button id="modal-cancel" class="ghost">Cancelar</button>
         <button id="modal-ok" class="primary">Crear</button>
       </div>
+      <div id="user-menu" aria-hidden="true">
+        <h4>Perfil</h4>
+        <div class="field">
+          <label>Nombre</label>
+          <input id="profile-name" type="text" placeholder="Nombre"/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="profile-email" type="email" placeholder="correo@dominio.com"/>
+        </div>
+        <div class="row-actions">
+          <button id="profile-cancel" class="btn">Cerrar</button>
+          <button id="profile-save" class="btn primary">Guardar</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -852,6 +1314,21 @@
         <button id="btn-cancel-cards" class="ghost">Cancelar</button>
         <button id="btn-save-cards" class="primary">Guardar</button>
       </div>
+      <div id="user-menu" aria-hidden="true">
+        <h4>Perfil</h4>
+        <div class="field">
+          <label>Nombre</label>
+          <input id="profile-name" type="text" placeholder="Nombre"/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="profile-email" type="email" placeholder="correo@dominio.com"/>
+        </div>
+        <div class="row-actions">
+          <button id="profile-cancel" class="btn">Cerrar</button>
+          <button id="profile-save" class="btn primary">Guardar</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -866,10 +1343,39 @@
         <button id="folder-cancel" class="ghost">Cancelar</button>
         <button id="folder-ok" class="primary">Crear</button>
       </div>
+      <div id="user-menu" aria-hidden="true">
+        <h4>Perfil</h4>
+        <div class="field">
+          <label>Nombre</label>
+          <input id="profile-name" type="text" placeholder="Nombre"/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="profile-email" type="email" placeholder="correo@dominio.com"/>
+        </div>
+        <div class="row-actions">
+          <button id="profile-cancel" class="btn">Cerrar</button>
+          <button id="profile-save" class="btn primary">Guardar</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
+  // === User Management System ===
+  let currentUser = null;
+  let users = JSON.parse(localStorage.getItem('pengu_users') || '[]');
+  
+  // Default users if none exist
+  if (users.length === 0) {
+    users = [
+      { id: 'user1', name: 'Estudiante 1', avatar: '🐧', color: '#ff76b9' },
+      { id: 'user2', name: 'Estudiante 2', avatar: '🐱', color: '#ffa6cf' },
+      { id: 'user3', name: 'Estudiante 3', avatar: '🐻', color: '#ffd1e8' }
+    ];
+    localStorage.setItem('pengu_users', JSON.stringify(users));
+  }
+
   // === Utility functions ===
   const qs = sel => document.querySelector(sel);
   const el = (tag, props = {}) => { const e = document.createElement(tag); Object.assign(e, props); return e; };
@@ -974,6 +1480,148 @@
   const STORAGE_KEY = 'penguQuizlet:v5';
 // Database structure now also tracks folders for organizing sets
 let db = { sets: {}, items: {}, progress: {}, folders: {} };
+
+  // === User Management Functions ===
+  function renderUserSelection() {
+    const grid = qs('#user-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    // Render existing users
+    users.forEach(user => {
+      const card = el('div', { className: 'user-card' });
+      card.onclick = () => selectUser(user);
+      
+      const avatar = el('div', { className: 'user-avatar' });
+      avatar.style.background = user.color || '#ff76b9';
+      avatar.innerText = user.avatar || user.name.charAt(0).toUpperCase();
+      
+      const name = el('div', { className: 'user-name', innerText: user.name });
+      const subtitle = el('div', { className: 'user-subtitle', innerText: 'Toca para continuar' });
+      
+      card.appendChild(avatar);
+      card.appendChild(name);
+      card.appendChild(subtitle);
+      const del = el('button', { className:'user-del', innerText:'×' });
+del.onclick = (ev)=>{ ev.stopPropagation(); deleteUser(user.id); };
+card.appendChild(del);
+grid.appendChild(card);
+    });
+    
+    // Add "Add User" card
+    const addCard = el('div', { className: 'user-card add-user-card' });
+    addCard.onclick = addNewUser;
+    
+    const addAvatar = el('div', { className: 'user-avatar' });
+    addAvatar.style.background = '#ddd';
+    addAvatar.innerText = '+';
+    
+    const addName = el('div', { className: 'user-name', innerText: 'Agregar Usuario' });
+    const addSubtitle = el('div', { className: 'user-subtitle', innerText: 'Crear nuevo perfil' });
+    
+    addCard.appendChild(addAvatar);
+    addCard.appendChild(addName);
+    addCard.appendChild(addSubtitle);
+    grid.appendChild(addCard);
+  }
+
+  function selectUser(user) {
+    currentUser = user;
+    localStorage.setItem('pengu_current_user', JSON.stringify(user));
+    
+    // Update UI
+    const pill = qs('#active-user-pill');
+    if (pill) {
+      const nameEl = pill.querySelector('.name'); if (nameEl) nameEl.textContent = user.name;
+      const dot = pill.querySelector('.dot'); if (dot) dot.style.background = user.color || getComputedStyle(document.documentElement).getPropertyValue('--accent');
+      pill.style.display = 'inline-flex';
+    }
+    
+    // Hide user selection and show main app
+    const userSelection = qs('#user-selection');
+    const mainApp = qs('#main-app');
+    if (userSelection) userSelection.classList.add('hidden');
+    if (mainApp) mainApp.style.display = 'block';
+    
+    // Load user-specific data
+    loadUserData();
+  }
+
+  
+  function deleteUser(id){
+    if (!confirm('¿Eliminar este usuario y sus datos?')) return;
+    const idx = users.findIndex(u => u.id === id);
+    if (idx < 0) return;
+    // remove per-user db
+    localStorage.removeItem(`pengu_db_${id}`);
+    users.splice(idx,1);
+    localStorage.setItem('pengu_users', JSON.stringify(users));
+    const curRaw = localStorage.getItem('pengu_current_user');
+    let cur = null;
+    try { cur = curRaw ? JSON.parse(curRaw) : null; } catch(e){ cur = null; }
+    if (cur && cur.id === id){
+      localStorage.removeItem('pengu_current_user');
+      currentUser = null;
+      const mainApp = qs('#main-app');
+      const userSelection = qs('#user-selection');
+      if (mainApp) mainApp.style.display = 'none';
+      if (userSelection) userSelection.classList.remove('hidden');
+    }
+    renderUserSelection();
+  }
+function addNewUser() {
+    const name = prompt('Nombre del nuevo usuario:');
+    if (!name || !name.trim()) return;
+    
+    const colors = ['#ff76b9', '#ffa6cf', '#ffd1e8', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+    const avatars = ['🐧', '🐱', '🐻', '🦊', '🦉', '🐶', '🐰', '🐼', '🦁', '🐯', '🐸', '🐙', '🦄', '🐲', '🦋', '🐝', '🐢', '🦆', '🐺', '🦘'];
+    
+    const newUser = {
+      id: 'user' + Date.now(),
+      name: name.trim(),
+      avatar: avatars[Math.floor(Math.random() * avatars.length)],
+      color: colors[Math.floor(Math.random() * colors.length)]
+    };
+    
+    users.push(newUser);
+    localStorage.setItem('pengu_users', JSON.stringify(users));
+    renderUserSelection();
+  }
+
+  function loadUserData() {
+    // Load user-specific database
+    const userDbKey = `pengu_db_${currentUser.id}`;
+    const userData = localStorage.getItem(userDbKey);
+    if (userData) {
+      try {
+        db = JSON.parse(userData);
+      } catch (e) {
+        // fallback to empty db on parse error
+        db = { sets:{}, items:{}, progress:{}, folders:{} };
+        console.warn('Failed to load user data, using default');
+      }
+    } else {
+      // initialize empty db for new user so sets are not shared
+      db = { sets:{}, items:{}, progress:{}, folders:{} };
+      saveUserData();
+    }
+    renderAll();
+  }
+
+  function saveUserData() {
+    if (!currentUser) return;
+    const userDbKey = `pengu_db_${currentUser.id}`;
+    localStorage.setItem(userDbKey, JSON.stringify(db));
+  }
+
+  function showUserSelection() {
+    const userSelection = qs('#user-selection');
+    const mainApp = qs('#main-app');
+    if (userSelection) userSelection.classList.remove('hidden');
+    if (mainApp) mainApp.style.display = 'none';
+    renderUserSelection();
+  }
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -992,6 +1640,8 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
   function save() {
     // Persist folders along with sets, items and progress
     localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    // Also save user-specific data
+    saveUserData();
   }
   function uuid() {
     return 'xxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16));
@@ -1116,7 +1766,7 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     Object.values(db.sets).forEach(s => {
       options += `<option value="${s.id}"${s.id === currentSet ? ' selected' : ''}>${s.title}</option>`;
     });
-    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze','select-leelo'].forEach(id => {
+    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze','select-leelo','select-drag'].forEach(id => {
       const select = qs('#' + id);
       if (select) select.innerHTML = options;
     });
@@ -1634,6 +2284,49 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     qs('#test-grade').classList.add('hidden');
     qs('#test-reset').classList.remove('hidden');
     qs('#test-report').classList.remove('hidden');
+    const expPanel = qs('#test-export'); if (expPanel) expPanel.classList.remove('hidden');
+    if (window.bindExportButtons) window.bindExportButtons();
+    // Build results snapshot for export/email
+    try {
+      const total = currentTest.qs.length;
+      const setSel = qs('#select-test');
+      const setTitle = (setSel && setSel.options && setSel.selectedIndex >= 0) ? setSel.options[setSel.selectedIndex].text : (currentSet || '—');
+      const questions = currentTest.qs.map((q, i) => {
+        const ans = currentTest.answers[i];
+        let userAns = '';
+        let correctAns = q.answer || '';
+        let ok = false;
+        if (q.kind === 'mcq') {
+          userAns = (ans != null && typeof ans.value === 'number') ? (q.choices[ans.value] || '') : '';
+          correctAns = q.answer || (typeof q.correctIndex === 'number' ? (q.choices[q.correctIndex] || '') : '');
+          ok = ans && q.correctIndex === ans.value;
+        } else if (q.kind === 'tf') {
+          userAns = (ans && typeof ans.value !== 'undefined') ? (ans.value ? 'Verdadero' : 'Falso') : '';
+          correctAns = (q.truth ? 'Verdadero' : 'Falso');
+          ok = ans && ans.value === !!q.truth;
+        } else {
+          userAns = (ans && ans.value) ? String(ans.value) : '';
+          correctAns = q.answer || '';
+          const guessRaw = (userAns || '').trim().toLowerCase();
+          const realRaw  = (correctAns || '').trim().toLowerCase();
+          const guess = stripAccents(guessRaw);
+          const real  = stripAccents(realRaw);
+          ok = levenshtein(guess, real) <= Math.max(1, Math.floor(real.length * 0.1));
+        }
+        return { idx: i+1, kind: q.kind, prompt: q.prompt, shown: (q.kind==='tf'? q.shown : undefined), user: userAns, correct: correctAns, ok , choices: (q.kind==='mcq' && Array.isArray(q.choices)) ? q.choices.slice() : null };
+      });
+      window.examResults = {
+        total,
+        correct,
+        percentage: score,
+        date: nowISO(),
+        setTitle
+      };
+      window.examQuestions = questions;
+      // reveal export panel
+      const exp = qs('#test-export'); if (exp) exp.classList.remove('hidden');
+    } catch(e) { console.warn('Export snapshot failed', e); }
+
     // Update mastery based on new test
     computeMastery(currentSet);
     function pct(t) { return t.all ? Math.round(100 * t.ok / t.all) : 0; }
@@ -2427,13 +3120,13 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
 
   // === Navigation ===
   function switchView(name) {
-    ['sets','flash','leelo','learn','test','match','pair','comb','cloze','import'].forEach(v => {
+    ['sets','flash','leelo','learn','test','match','pair','comb','cloze','import','drag'].forEach(v => {
       const sec = qs('#view-' + v);
       if (sec) sec.classList.add('hidden');
     });
     const active = qs('#view-' + name);
     if (active) active.classList.remove('hidden');
-    ['nav-sets','nav-flash','nav-leelo','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import'].forEach(id => {
+    ['nav-sets','nav-flash','nav-leelo','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import','nav-drag'].forEach(id => {
       const btn = qs('#' + id);
       if (btn) btn.classList.remove('primary');
     });
@@ -2468,7 +3161,9 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
     if (name === 'leelo') {
       initLeelo();
     }
-
+    if (name === 'drag') {
+      initDrag();
+    }
     // Stop flash autoplay when leaving flash view
     if (name !== 'flash' && flashAuto) {
       flashAuto = false;
@@ -2488,6 +3183,7 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
   qs('#nav-comb').onclick = () => { switchView('comb'); };
   qs('#nav-pair').onclick = () => { switchView('pair'); };
   qs('#nav-cloze').onclick = () => { switchView('cloze'); };
+  qs('#nav-drag').onclick = () => { switchView('drag'); };
   qs('#nav-import').onclick = () => { switchView('import'); };
 
   // === Modals and events for sets ===
@@ -2738,6 +3434,598 @@ let db = { sets: {}, items: {}, progress: {}, folders: {} };
   renderAll();
   switchView('sets');
 
-  </script>
+  
+  // === Token Drag mode ===
+  let dragState = { deck: [], current: 0, partitions: 4, tokens: [], correct: [], setId: null };
+
+  function ensureSortable(cb) {
+    if (window.Sortable) return cb();
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+    sc.onload = () => cb();
+    document.head.appendChild(sc);
+  }
+
+  function buildDragDeck(setId) {
+    const items = (db.items[setId] || []);
+    return items.map(it => ({ id: it.id, term: it.term || '', definition: it.definition || '' }))
+                .filter(c => c.term && c.definition);
+  }
+
+  function initDrag() {
+    const sel = qs('#select-drag');
+    const setId = (sel && sel.value) || currentSet;
+    if (!setId) {
+      qs('#drag-current-term').innerText = '—';
+      qs('#drag-tokens').innerHTML = '';
+      qs('#drag-drop').innerHTML = '';
+      qs('#drag-progress').innerText = '0/0';
+      return;
+    }
+    currentSet = setId;
+    if (sel) sel.value = currentSet;
+    dragState.setId = currentSet;
+    dragState.deck = buildDragDeck(currentSet);
+    dragState.current = 0;
+    renderDragCard();
+  }
+
+  function renderDragCard() {
+    const deck = dragState.deck;
+    const n = deck.length;
+    const prog = qs('#drag-progress');
+    if (prog) prog.innerText = n ? (dragState.current + 1) + '/' + n : '0/0';
+    if (!n) {
+      qs('#drag-current-term').innerText = '(sin tarjetas)';
+      qs('#drag-tokens').innerHTML = '';
+      qs('#drag-drop').innerHTML = '';
+      return;
+    }
+    const { term, definition } = deck[dragState.current];
+    qs('#drag-current-term').innerText = term;
+
+    const partitionsInput = qs('#drag-partitions');
+    const p = Math.max(2, Math.min(20, parseInt((partitionsInput && partitionsInput.value) || '4', 10) || 4));
+    dragState.partitions = p;
+
+    const words = (definition || '').split(/\s+/).filter(Boolean);
+    // Compute exactly 'parts' chunks, as equal as possible, never exceeding word count
+    let parts = Math.min(p, Math.max(1, words.length));
+    let chunks = [];
+    if (words.length === 0) {
+      parts = 0;
+      chunks = [];
+    } else {
+      const base = Math.floor(words.length / parts);
+      const extra = words.length % parts;
+      let idx = 0;
+      for (let k = 0; k < parts; k++) {
+        const size = base + (k < extra ? 1 : 0);
+        chunks.push(words.slice(idx, idx + size).join(' '));
+        idx += size;
+      }
+    }
+    dragState.correct = chunks.slice();
+    dragState.tokens = chunks.slice().sort(() => Math.random() - 0.5);
+
+    const tok = qs('#drag-tokens');
+    const drop = qs('#drag-drop');
+    tok.innerHTML = dragState.tokens.map(t => `<div class="drag-chip">${escapeHTML(t)}</div>`).join('');
+    drop.innerHTML = '';
+
+    ensureSortable(() => {
+      [tok, drop].forEach(el => {
+        Sortable.create(el, { group: 'drag-shared', animation: 150 });
+      });
+    });
+
+    const msg = qs('#drag-message');
+    if (msg) msg.innerText = '';
+
+    const sel = qs('#select-drag');
+    if (sel && !sel.onchange) sel.onchange = () => initDrag();
+    const part = qs('#drag-partitions');
+    if (part && !part.onchange) part.onchange = () => renderDragCard();
+    const prevB = qs('#drag-prev');
+    if (prevB && !prevB.onclick) prevB.onclick = dragPrev;
+    const nextB = qs('#drag-next');
+    if (nextB && !nextB.onclick) nextB.onclick = dragNext;
+    const chkB = qs('#drag-check');
+    if (chkB && !chkB.onclick) chkB.onclick = dragCheck;
+  }
+
+  function maxSafePartitions(nWords) { /* deprecated: kept for compatibility */
+    if (nWords <= 3) return 2;
+    if (nWords <= 6) return 3;
+    if (nWords <= 9) return 4;
+    return Math.min(6, nWords); // avoid hyper-fragmentation
+  }
+
+  function dragCheck() {
+    const drop = qs('#drag-drop');
+    const chips = Array.from(drop.querySelectorAll('.drag-chip'));
+    const user = chips.map(el => el.textContent.trim());
+    const ok = JSON.stringify(user) === JSON.stringify(dragState.correct);
+    drop.classList.remove('drag-ok', 'drag-bad');
+    if (ok) {
+      drop.classList.add('drag-ok');
+      const msg = qs('#drag-message'); if (msg) msg.innerText = '✅ ¡Perfecto!';
+      if (window.confettiLaunch) window.confettiLaunch(120);
+      const currentItem = dragState.deck[dragState.current];
+      if (currentItem && db.progress[currentSet] && db.progress[currentSet][currentItem.id]) {
+        gradeLearn(currentItem.id, 5);
+      }
+    } else {
+      drop.classList.add('drag-bad');
+      const msg = qs('#drag-message'); if (msg) msg.innerText = '❌ Orden incorrecto. Ajusta y vuelve a comprobar.';
+      const currentItem = dragState.deck[dragState.current];
+      if (currentItem && db.progress[currentSet] && db.progress[currentSet][currentItem.id]) {
+        gradeLearn(currentItem.id, 2);
+      }
+    }
+  }
+
+  function dragNext() {
+    if (!dragState.deck.length) return;
+    dragState.current = (dragState.current + 1) % dragState.deck.length;
+    renderDragCard();
+  }
+  function dragPrev() {
+    if (!dragState.deck.length) return;
+    dragState.current = (dragState.current - 1 + dragState.deck.length) % dragState.deck.length;
+    renderDragCard();
+  }
+
+  function escapeHTML(s) {
+    return (s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+
+</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.emailjs.com/sdk/3.2.0/email.min.js"></script>
+
+<script>
+// === PDF & Email export for Test mode ===
+(function(){
+  // emailjs init
+  
+  // Robust loader for EmailJS
+  async function ensureEmailJS(){
+    if (window.emailjs && ensureEmailJS._ready) return window.emailjs;
+    if (!window.emailjs){
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+        s.onload = resolve; s.onerror = () => reject(new Error('No se pudo cargar EmailJS'));
+        document.head.appendChild(s);
+      });
+    }
+    if (window.emailjs && !ensureEmailJS._ready){
+      try { window.emailjs.init('cwuec8KE6MrkIAM36'); ensureEmailJS._ready = true; } catch(e){ /* noop */ }
+    }
+    return window.emailjs;
+  }
+    }
+)
+
+  function getExamResults(){
+    const setSel = qs('#select-test');
+    const setTitle = (setSel && setSel.options && setSel.selectedIndex >= 0) ? setSel.options[setSel.selectedIndex].text : (currentSet || '—');
+    if (!window.examResults) window.examResults = { total: 0, correct: 0, percentage: 0, date: nowISO(), setTitle };
+    return window.examResults;
+  }
+  function getExamQuestions(){
+    if (!window.examQuestions) return [];
+    return window.examQuestions;
+  }
+
+  
+  function buildEmailPDFDoc(name, email){
+    // active user helper
+    function getActiveUser(){
+      try {
+        if (window.currentUser && currentUser.id) return currentUser;
+        const raw = localStorage.getItem('pengu_current_user');
+        return raw ? JSON.parse(raw) : null;
+      } catch(_){ return window.currentUser || null; }
+    }
+    // resolve defaults from active user if inputs are empty
+    try {
+      const au = getActiveUser();
+      if ((!name || !name.trim()) && au && au.name) name = au.name;
+      if ((!email || !email.trim()) && au && au.email) email = au.email;
+    } catch(_) {}
+    // helper: load penguin.png (optional)
+    function tryAddLogo(doc, x, y, w){
+      try{
+        const au = (getActiveUser && getActiveUser());
+        if (au && au.avatarImage){ doc.addImage(au.avatarImage, 'PNG', m.left, y, w, w); }
+      }catch(_){ }
+
+      return new Promise((resolve)=> {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = ()=>{ try{ doc.addImage(img, 'PNG', x, y, w, w); }catch(_){ } resolve(); };
+        img.onerror = ()=> resolve();
+        img.src = 'penguin.png';
+      });
+    }
+    // helper: short date
+    function fmtDate(iso){
+      try{ const d = new Date(iso); if (!isNaN(+d)) return d.toLocaleString(); }catch(_){}
+      return String(iso||'');
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'a4' });
+    const W = 210, H = 297;
+    const m = { top:16, right:14, bottom:18, left:14 };
+    const CW = W - m.left - m.right;
+    let y = m.top;
+
+    // Palette
+    const P = {
+      primary: [214, 51, 132],      // #d63384
+      primaryLight: [255, 235, 245],
+      ink: [33, 37, 41],
+      subtle: [108, 117, 125],
+      border: [222, 226, 230],
+      ok: [25, 135, 84],
+      bad: [220, 53, 69]
+    };
+
+    // Helpers
+    function t(txt, x, y){
+      const _txt = String(txt ?? '');
+      const _x = Number(x);
+      const _y = Number(y);
+      doc.text(_txt, isNaN(_x)?m.left:_x, isNaN(_y)?y:_y);
+    }
+    function hr(gap=3){ doc.setDrawColor(...P.border); doc.setLineWidth(.5); doc.line(m.left, y, W-m.right, y); y += gap; }
+    function heading(title, subtitle){
+      // attempt to draw logo on the right
+      (window.__penguLogoOnce || (window.__penguLogoOnce=true, tryAddLogo(doc, W-m.right-12, y-2, 10)));
+
+      // Ribbon header
+      doc.setFillColor(...P.primary); doc.setDrawColor(...P.primary);
+      doc.roundedRect(m.left, y, CW, 14, 3, 3, 'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      t(title, m.left+6, y+9);
+      y += 18;
+      if (subtitle){
+        doc.setTextColor(...P.subtle); doc.setFont('helvetica','normal'); doc.setFontSize(11);
+        t(subtitle, m.left, y); y += 4;
+      }
+      hr(6);
+    }
+    function labelValue(label, value, x, w){
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...P.subtle);
+      t(label, x, y);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(...P.ink);
+      const lines = doc.splitTextToSize(String(value||'-'), w);
+      lines.forEach((ln,i)=>{ t(ln, x, y+5+i*4.6); });
+      const blockH = 5 + (lines.length-1)*4.6 + 2;
+      return blockH;
+    }
+    function twoColSummary(rows){
+      const colW = CW/2 - 4;
+      for (const [l1,v1,l2,v2] of rows){
+        const h1 = labelValue(l1, v1, m.left, colW);
+        const h2 = labelValue(l2, v2, m.left + colW + 8, colW);
+        y += Math.max(h1, h2) + 3;
+      }
+      hr(4);
+    }
+    function box(title, fn){
+      if (y > H - 40) { doc.addPage(); y = m.top; }
+      doc.setDrawColor(...P.border); doc.setFillColor(...P.primaryLight);
+      doc.roundedRect(m.left, y, CW, 8, 2, 2, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...P.primary);
+      t(String(title), m.left+4, y+5.4);
+      y += 11;
+      const yStart = y;
+      fn();
+      // bottom gap
+      y += 3;
+    }
+    function para(txt, size=11, gap=3){
+      doc.setFont('helvetica','normal'); doc.setFontSize(size); doc.setTextColor(...P.ink);
+      const lines = doc.splitTextToSize(String(txt||''), CW);
+      lines.forEach(ln=>{ t(ln, m.left, y); y += 5; });
+      y += gap;
+    }
+    function optionsList(q){
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      const startY = y;
+      q.choices.forEach((opt,i)=>{
+        if (y > H - 20) { doc.addPage(); y = m.top; }
+        const isCorrect = String(opt)===String(q.correct);
+        const isUser = String(opt)===String(q.user);
+        const bullet = letters[i] + ') ';
+        // Highlight correct and user's choice
+        if (isCorrect){ doc.setTextColor(...P.ok); } else if (!q.ok && isUser){ doc.setTextColor(...P.bad); } else { doc.setTextColor(...P.ink); }
+        const line = bullet + String(opt);
+        const lines = doc.splitTextToSize(line, CW-6);
+        lines.forEach((ln,j)=>{ t(ln, m.left+2, y + j*4.2); });
+        y += lines.length*4.2 + 2.5;
+      });
+      y = Math.max(y, startY + 4);
+    }
+
+    // Header
+    heading('Reporte de Prueba', 'Generado por Pengu Quizlet');
+    // Summary
+    const res = getExamResults(); const qsData = getExamQuestions();
+    const nameLabel = (name && name.trim()) ? name.trim() : ((window.currentUser&&currentUser.name)||'-');
+    const emailLabel = (email && email.trim()) ? email.trim() : ((getActiveUser() && getActiveUser().email) || '-') ;
+    twoColSummary([
+      ['Participante', nameLabel],          ['Correo', emailLabel],
+      ['Institución', (getActiveUser()&&getActiveUser().inst)||'-'], ['Grado/Sección', (getActiveUser()&&getActiveUser().grade)||'-'],
+      ['Set', res.setTitle||'-'],           ['Fecha', fmtDate(res.date)||'-'],
+      ['Preguntas', String(res.total||0)],  ['Correctas', String(res.correct||0)],
+      ['Porcentaje', (res.percentage||0)+'%', '']
+    ]);
+
+    // Questions
+    qsData.forEach((q, idx)=>{
+      box(`${idx+1}. ${q.prompt||''}`, ()=>{
+        if (q.kind === 'tf' && q.shown) { para('Afirmación: ' + q.shown); }
+        para('Tu respuesta: ' + (q.user||'-'));
+        para('Correcta: ' + (q.correct||'-'));
+        para('Resultado: ' + (q.ok ? '✅ Correcta' : '❌ Incorrecta'));
+        if (Array.isArray(q.choices)) { optionsList(q); }
+      });
+    });
+
+    return doc;
+  }
+
+
+  async function generateTestPDF(){
+    if (!window.jspdf){ alert('jsPDF no cargado.'); return; }
+    const name = (qs('#nameInput') && qs('#nameInput').value) || '';
+    const email = (qs('#emailInput') && qs('#emailInput').value) || '';
+    const doc = buildEmailPDFDoc(name, email);
+    const res = getExamResults();
+    const safeSet = (res.setTitle||'set').replace(/[^a-z0-9-_ ]/gi,'_').trim();
+    const date = (res.date||'').replace(/[:T]/g,'-').slice(0,16);
+    doc.save(`Resultado_Probar_${safeSet}_${date}.pdf`);
+  }
+
+  function isValidEmail(email){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  
+
+
+
+async function sendEmail(){
+  const emailEl = qs('#emailInput');
+  const nameEl  = qs('#nameInput');
+  const statusEl = qs('#emailStatus');
+  const email = (emailEl && emailEl.value || '').trim();
+  const name  = (nameEl && nameEl.value || '').trim();
+
+  try { 
+    if (!window.emailjs) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    if (!window.emailjs) throw new Error('EmailJS not loaded');
+    emailjs.init('cwuec8KE6MrkIAM36');
+  } catch(e){
+    alert('EmailJS no cargado (SDK).'); return;
+  }
+
+  if (!email || !isValidEmail(email)){
+    if (statusEl){ statusEl.textContent = 'Correo inválido.'; statusEl.style.color = 'red'; }
+    return;
+  }
+
+  const exam = (window.examResults || { total:0, correct:0, percentage:0, date:'', setTitle:'-' });
+  const params = {
+    // destinatario según tu plantilla ({{email}})
+    email: email,
+    to_email: email,
+    to_name: name || 'Estudiante',
+    // metadata remitente
+    from_name: name || 'Estudiante',
+    from_email: email,
+    reply_to: email,
+    user_name: name || 'Estudiante',
+    user_email: email,
+    // datos del examen
+    score: `${exam.correct}/${exam.total} (${exam.percentage}%)`,
+    total: String(exam.total),
+    correct: String(exam.correct),
+    percentage: String(exam.percentage),
+    date: exam.date,
+    setTitle: exam.setTitle
+  };
+
+  if (statusEl){ statusEl.textContent = 'Enviando...'; statusEl.style.color = 'inherit'; }
+  try {
+    await emailjs.send('service_pz1t0db', 'examenpengu', params, 'cwuec8KE6MrkIAM36');
+    if (statusEl){ statusEl.textContent = '¡Enviado! Revisa tu correo.'; statusEl.style.color = 'green'; }
+  } catch(err) {
+    console.error(err);
+    if (statusEl){ statusEl.textContent = 'Error al enviar. Verifica EmailJS (service/template/publicKey) y variables.'; statusEl.style.color = 'red'; }
+  }
+}
+
+function bindExportButtons(){
+  const pdfBtn = qs('#test-pdf');
+  const emailBtn = qs('#test-email');
+  const sendBtn = qs('#test-email-send');
+  if (pdfBtn && !pdfBtn._wired){ pdfBtn.onclick = generateTestPDF; pdfBtn._wired = true; }
+  if (emailBtn && !emailBtn._wired){
+    emailBtn.onclick = () => {
+      const f = qs('#test-email-form');
+      if (f) f.classList.toggle('hidden');
+    };
+    emailBtn._wired = true;
+  }
+  if (sendBtn && !sendBtn._wired){ sendBtn.onclick = sendEmail; sendBtn._wired = true; }
+}
+window.bindExportButtons = bindExportButtons;
+
+
+
+
+  // Also bind on DOMContentLoaded to ensure handlers exist even before grading toggles the panel
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.bindExportButtons) window.bindExportButtons();
+    
+    // Initialize user system
+    // Check if there's a current user
+    const savedUser = localStorage.getItem('pengu_current_user');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+        selectUser(currentUser);
+      } catch (e) {
+        showUserSelection();
+      }
+    } else {
+      showUserSelection();
+    }
+    
+    // Bind change user button
+    const changeUserBtn = qs('#change-user-btn');
+    if (changeUserBtn) {
+      changeUserBtn.onclick = showUserSelection;
+    }
+  });
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+
+// === Profile Menu Wiring ===
+(function(){
+  const pill = qs('#active-user-pill');
+  const menu = qs('#user-menu');
+  const nameI = qs('#profile-name');
+  const emailI = qs('#profile-email');
+  const instI = qs('#profile-inst');
+  const gradeI = qs('#profile-grade');
+  const colorI = qs('#profile-color');
+  const avatarI = qs('#profile-avatar');
+  const avatarPrev = qs('#profile-avatar-preview');
+  const btnSave = qs('#profile-save');
+  const btnChange = qs('#profile-change');
+  const showSel = (typeof showUserSelection==='function') ? showUserSelection : null;
+  const headerChangeBtn = qs('#change-user-btn');
+  const btnDelete = qs('#profile-delete');
+
+  function openMenu(){
+    if (!menu) return;
+    const u = (window.currentUser || {});
+    if (nameI)  nameI.value  = u.name  || '';
+    if (emailI) emailI.value = u.email || '';
+    if (instI)  instI.value  = u.inst  || '';
+    if (gradeI) gradeI.value = u.grade || '';
+    if (colorI) colorI.value = u.color || getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#ff76b9';
+    if (avatarPrev) avatarPrev.src = u.avatarImage || '';
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden','false');
+  }
+  function closeMenu(){
+    if (!menu) return;
+    menu.classList.remove('open');
+    menu.setAttribute('aria-hidden','true');
+  }
+  if (pill){ pill.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); }); }
+  if (menu){ menu.addEventListener('click', (e)=> e.stopPropagation()); }
+  document.addEventListener('click', ()=> closeMenu());
+
+  if (avatarI){
+    avatarI.onchange = async (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{ if (avatarPrev) avatarPrev.src = reader.result; };
+      reader.readAsDataURL(f);
+    };
+  }
+
+  if (btnSave){
+    btnSave.onclick = ()=>{
+      const u = (window.currentUser || {});
+      u.name  = (nameI && nameI.value.trim())  || u.name  || '';
+      u.email = (emailI && emailI.value.trim()) || u.email || '';
+      u.inst  = (instI && instI.value.trim())   || u.inst  || '';
+      u.grade = (gradeI && gradeI.value.trim()) || u.grade || '';
+      if (colorI && colorI.value) u.color = colorI.value;
+      if (avatarPrev && avatarPrev.src) u.avatarImage = avatarPrev.src;
+
+      window.currentUser = u;
+      localStorage.setItem('pengu_current_user', JSON.stringify(u));
+      // update users array
+      try{
+        const raw = localStorage.getItem('pengu_users');
+        const arr = raw ? JSON.parse(raw) : [];
+        const i = arr.findIndex(x=>x.id===u.id);
+        if (i>=0) arr[i] = { ...arr[i], ...u };
+        localStorage.setItem('pengu_users', JSON.stringify(arr));
+      }catch{}
+
+      // reflect in header
+      const pillName = qs('#active-user-pill .name'); if (pillName) pillName.textContent = u.name || 'Usuario';
+      const dot = qs('#active-user-pill .dot'); if (dot) dot.style.background = u.color || dot.style.background;
+
+      // prefill test email/name if empty
+      const ni = qs('#nameInput'); if (ni && !ni.value) ni.value = u.name || '';
+      const ei = qs('#emailInput'); if (ei && !ei.value) ei.value = u.email || '';
+
+      closeMenu();
+    };
+  }
+  if (btnChange){ btnChange.onclick = ()=>{ closeMenu(); if (showSel) showSel(); }; }
+  if (headerChangeBtn){ headerChangeBtn.onclick = ()=>{ if (showSel) showSel(); }; }
+  if (btnDelete){ btnDelete.onclick = ()=>{ if (confirm('¿Eliminar este usuario y sus datos?')) { closeMenu(); if (typeof deleteUser==='function') deleteUser(currentUser.id); } }; }
+})();
+
+</script>
+<script>
+
+// === Auto-fit panel height to viewport ===
+(function(){
+  function setHeaderHeightVar(){
+    const header = document.querySelector('header');
+    const tabs   = document.querySelector('.tabs');
+    const h = (header? header.getBoundingClientRect().height : 0) + (tabs? 0 : 0);
+    document.documentElement.style.setProperty('--header-total', Math.round(h) + 'px');
+  }
+  setHeaderHeightVar();
+  window.addEventListener('resize', setHeaderHeightVar);
+  window.addEventListener('orientationchange', setHeaderHeightVar);
+})();
+
+</script>
+<div class="focus-hint">Salir con Esc</div>
+<script>
+
+// === Focus mode toggle ===
+(function(){
+  const btn = document.getElementById('focus-toggle');
+  function setFocus(on){
+    document.body.classList.toggle('focus-mode', !!on);
+    if (btn) btn.textContent = on ? '⤺' : '↗';
+    if (btn) btn.title = on ? 'Salir de vista enfocada (⤺)' : 'Vista enfocada (↗)';
+  }
+  if (btn){
+    btn.addEventListener('click', ()=> setFocus(!document.body.classList.contains('focus-mode')));
+  }
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) setFocus(false);
+  });
+})();
+</script>
 </body>
 </html>
