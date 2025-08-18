@@ -1475,6 +1475,88 @@ header { z-index: 2000; }              /* el header crea el stacking context má
 #view-flash .flash-inner{ background: #fff !important; } /* default white; JS overrides inline */
 </style>
 
+
+<style id="landing-responsive-fix">
+/* ===== Landing / Selección de usuario: responsive real ===== */
+
+/* Asegura scroll vertical si no cabe todo (en móviles) */
+#user-selection{
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Grid más flexible: 2-3 columnas en móviles, tarjetas más compactas */
+@media (max-width: 480px){
+  #user-selection{
+    justify-content: flex-start;    /* no centrar verticalmente cuando hay muchas tarjetas */
+    align-items: stretch;
+    padding-top: 10px;
+  }
+  #user-grid{
+    grid-template-columns: repeat(2, minmax(120px, 1fr)) !important;
+    gap: 10px !important;
+  }
+  #user-grid .user-card{ padding: 10px !important; }
+  #user-grid .user-card .avatar{
+    width: clamp(48px, 22vw, 72px) !important;
+    height: clamp(48px, 22vw, 72px) !important;
+  }
+  #user-grid .user-card .name{ font-size: clamp(0.95rem, 4.2vw, 1.1rem) !important; }
+  #user-grid .user-card .meta{ font-size: clamp(0.8rem, 3.6vw, 0.95rem) !important; }
+}
+
+/* Cuando la altura es pequeña (teclado emergente, móviles chicos / horizontal) */
+@media (max-height: 700px){
+  #user-selection{
+    justify-content: flex-start;
+    align-items: stretch;
+    padding-top: 8px;
+  }
+  #user-grid{ grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important; }
+}
+</style>
+
+
+<style id="landing-centering-override">
+/* ===== Center landing grid horizontally while keeping vertical start ===== */
+#user-selection{
+  /* allow scroll if many cards */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* structure */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* start vertically */
+  align-items: center;         /* center horizontally */
+  padding-inline: 12px;
+}
+#user-grid{
+  /* center the grid itself within its parent */
+  margin-inline: auto;
+  place-content: start center;       /* align-content:start; justify-content:center */
+}
+/* small screens: compact grid, still centered */
+@media (max-width: 480px){
+  #user-grid{
+    grid-template-columns: repeat(2, minmax(120px, 1fr)) !important;
+    gap: 10px !important;
+    place-content: start center;
+  }
+  #user-grid .user-card{ padding: 10px !important; }
+  #user-grid .user-card .avatar{
+    width: clamp(48px, 22vw, 72px) !important;
+    height: clamp(48px, 22vw, 72px) !important;
+  }
+  #user-grid .user-card .name{ font-size: clamp(0.95rem, 4.2vw, 1.1rem) !important; }
+  #user-grid .user-card .meta{ font-size: clamp(0.8rem, 3.6vw, 0.95rem) !important; }
+}
+/* short heights (landscape/keyboard out) */
+@media (max-height: 700px){
+  #user-selection{ justify-content: flex-start; align-items: center; }
+  #user-grid{ place-content: start center; }
+}
+</style>
+
 </head>
 <body data-reader-ui='1'>
 
