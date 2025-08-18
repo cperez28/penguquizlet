@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.1, maximum-scale=10, user-scalable=yes">
   <title>Pengu Quizlet</title>
   <style>
     /* Pastel palette tuned for a friendly learning experience */
@@ -204,10 +204,7 @@
       background: #fff;
       box-shadow: var(--shadow);
     }
-    .flash-inner.flipped {
-      transform: rotateY(180deg);
-    }
-    .flash-face {
+    .flash-inner.flash-face {
       position: absolute;
       inset: 0;
       backface-visibility: hidden;
@@ -893,7 +890,29 @@
       body.focus-mode .panels .panel{ max-height: calc(100vh - 16px); }
     }
 
-  </style>
+  
+/* ==== Robust flip rules (scoped) ==== */
+#view-flash .flash-card, #view-leelo #leelo-flash-wrap { perspective: 1000px; }
+#flash-inner { transform: translateZ(0); will-change: transform; }
+#flash-inner, #leelo-flash-card { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px; transform-style: preserve-3d; transition: transform 0.5s ease; }
+
+/* Faces: hidden backface and correct orientation */
+.flash-face { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.flash-front { transform: rotateY(0deg); }
+.flash-back  { transform: rotateY(180deg); }
+
+/* ==== Scoped flip rules for Flashcards (avoid global .flipped conflicts) ==== */
+#view-flash .flash-card { perspective: 1000px; }
+#view-flash .flash-inner { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px; transform-style: preserve-3d; transition: transform 0.5s ease; 
+  transition: background 300ms ease;
+}
+#view-flash .flash-inner.flipped { transform: rotateY(180deg); }
+.flash-face { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.flash-front { transform: rotateY(0deg); }
+.flash-back  { transform: rotateY(180deg); }
+</style>
 
 <style>
 /* ====== MOBILE-FIRST HARDENED OVERRIDES (2025-08-16) ====== */
@@ -971,11 +990,7 @@ table, .table-wrap, pre, code { max-width: 100%; overflow-x: auto; display: bloc
   height: auto !important;
   margin-left: auto; margin-right: auto;
 }
-#view-flash .flash-inner {
-  width: 100% !important;
-  aspect-ratio: 16 / 10;
-  height: auto !important;
-  max-height: min(60svh, 420px);
+var(--flash-max-h);
 }
 #view-flash .term { font-size: clamp(1.2rem, 5.2vw, 2rem); line-height: 1.25; }
 #view-flash .def  { font-size: clamp(1rem, 3.8vw, 1.25rem); line-height: 1.35; }
@@ -987,7 +1002,8 @@ table, .table-wrap, pre, code { max-width: 100%; overflow-x: auto; display: bloc
 
 /* Léelo Tú: usar nuevos IDs si existen (no afecta si no se renombró) */
 #view-leelo #leelo-flash-wrap { min-height: 0 !important; }
-#view-leelo #leelo-flash-card { width: min(96vw, 820px); margin: 0 auto; }
+#view-leelo #leelo-flash-card { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px; width: min(96vw, 820px); margin: 0 auto; }
 
 /* Botoneras genéricas en móvil */
 @media (max-width: 768px){
@@ -1019,13 +1035,7 @@ table, .table-wrap, pre, code { max-width: 100%; overflow-x: auto; display: bloc
   margin-right: auto;
 }
 
-#view-flash .flash-inner {
-  /* Sin alturas rígidas; deriva de ancho con aspect-ratio */
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 16 / 10;
-  /* Limitar para que no tape botones ni se desborde */
-  max-height: min(60svh, 420px);
+var(--flash-max-h);
   /* Evitar que padding interno hinche el tamaño */
   box-sizing: border-box;
 }
@@ -1040,7 +1050,7 @@ table, .table-wrap, pre, code { max-width: 100%; overflow-x: auto; display: bloc
 
 /* Paisaje con altura baja: prioriza altura de la tarjeta para no salirse */
 @media (max-height: 520px) and (orientation: landscape){
-  #view-flash .flash-inner { max-height: 48svh; aspect-ratio: 16 / 9; }
+  var(--flash-max-h); aspect-ratio: 16 / 9; }
 }
 
 /* 2) QUIÉN VA A ESTUDIAR: centrado vertical + tarjetas adaptables */
@@ -1118,14 +1128,16 @@ html, body { overflow-x: hidden; }
 #view-flash .flash-card,
 #view-flash .flash-inner,
 #view-leelo #leelo-flash-wrap,
-#view-leelo #leelo-flash-card {
+#view-leelo #leelo-flash-card { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px;
   max-width: 100%;
   box-sizing: border-box;
 }
 
 /* 2) Ajusta el ancho relativo: 92vw evita sumar padding exterior al viewport */
 #view-flash .flash-card,
-#view-leelo #leelo-flash-card {
+#view-leelo #leelo-flash-card { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px;
   width: min(92vw, 820px);      /* antes 96vw; 92vw elimina el “empujón” a la derecha */
   margin-left: auto;
   margin-right: auto;
@@ -1135,11 +1147,7 @@ html, body { overflow-x: hidden; }
 
 /* 3) El “lienzo” de la tarjeta recorta todo lo que se salga por flip 3D */
 #view-flash .flash-inner,
-#view-leelo #leelo-flash-card {
-  width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 16/10;          /* puedes usar 3/2 si te gusta más alta */
-  max-height: min(60svh, 420px);
+#view-leelo var(--leelo-max-h);
   padding: clamp(10px, 3.2vw, 18px);
   border-radius: 16px;
   overflow: hidden;             /* crucial: recorta caras durante el giro */
@@ -1178,9 +1186,7 @@ html, body { overflow-x: hidden; }
 /* 7) Paisaje con poca altura: relación más apaisada y menor altura */
 @media (max-height: 520px) and (orientation: landscape){
   #view-flash .flash-inner,
-  #view-leelo #leelo-flash-card {
-    aspect-ratio: 16/9;
-    max-height: 48svh;
+  #view-leelo var(--leelo-max-h);
   }
 }
 /* === PROFILE DROPDOWN ALWAYS ON TOP === */
@@ -1211,8 +1217,274 @@ header { z-index: 2000; }              /* el header crea el stacking context má
 
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style id="desktop-compact-override">
+/* ==== Desktop compact tweaks to avoid scroll in Flashcard & Léelo Tú ==== */
+@media (min-width: 1024px){
+  /* Reduce vertical gaps */
+  #view-flash .row, #view-leelo .row { gap: 8px !important; }
+  #view-flash .row.space-between, #view-leelo .row.space-between { margin-bottom: 6px !important; }
+  #view-flash .muted, #view-leelo .muted { margin: 4px 0 !important; }
+  /* Slightly narrower card on desktop to reduce height due to aspect-ratio */
+  #view-flash .flash-card, #view-leelo #leelo-flash-card { min-height: 320px; display: grid; place-items: center;
+  min-height: 280px; width: min(64vw, 800px) !important; }
+  /* Ensure panels don't add extra scroll due to padding */
+  #view-flash.panel, #view-leelo.panel { padding-top: 12px !important; padding-bottom: 12px !important; }
+  /* Tighten fonts a bit */
+  #view-flash .term { font-size: clamp(1.1rem, 2vw, 1.6rem) !important; }
+  #view-flash .def  { font-size: clamp(0.95rem, 1.6vw, 1.15rem) !important; }
+  #view-leelo #leelo-term { font-size: clamp(1.2rem, 2.2vw, 1.8rem) !important; }
+  #view-leelo #leelo-def  { font-size: clamp(1rem, 1.8vw, 1.25rem) !important; }
+  /* Progress area */
+  #view-flash .progress { height: 8px !important; margin-top: 6px !important; }
+}
+</style>
+
+
+
+
+
+<style id="leelo-controls-fixes">
+/* === Léelo Tú controls alignment === */
+#leelo-controls { 
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+#leelo-controls .leelo-btn, 
+#leelo-controls button {
+  height: 52px; 
+  font-size: 1rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%;
+}
+#leelo-controls .leelo-btn svg, 
+#leelo-controls button svg { width: 22px; height: 22px; }
+#leelo-controls .ghost, #leelo-controls .primary, #leelo-controls .pill { 
+  padding: 8px 10px !important; 
+}
+/* Timer row and speaker alignments */
+#leelo-card > .row { gap: 10px; }
+#leelo-card .row > * { align-self: center; }
+</style>
+
+
+<style id="flash-controls-reflow">
+/* === Flashcards: reflow controls (prev/next below) === */
+#flash-grade-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+#flash-show, #flash-tts { order: 1; flex: 0 1 160px; height: 40px; }
+#flash-prev, #flash-next { order: 2; flex: 1 1 200px; height: 40px; font-size: 0.95rem; }
+#flash-prev, #flash-next { max-width: 260px; }
+</style>
+
+
+
+
+
+<style id="flash-desktop-fit">
+@media (min-width: 1024px){
+  #view-flash .flash-card { width: min(60vw, 760px) !important; }
+}
+</style>
+
+
+<style id="leelo-face-centering">
+#view-leelo #leelo-flash-card { display: grid !important; place-items: center !important; }
+#view-leelo #leelo-term, #view-leelo #leelo-def {
+  text-align: center !important; margin: 0; line-height: 1.25;
+  hyphens: none !important; word-break: normal !important; overflow-wrap: anywhere; max-width: 92%;
+  font-weight: 600;
+}
+</style>
+
+
+<style id="flash-leelo-layout-2025-08">
+/* ===== Flashcards: reorganizar controles ===== */
+#flash-grade-row{ display:grid !important; gap:10px; grid-template-columns: repeat(4, minmax(120px,1fr)); align-items:center; justify-items:center; }
+#flash-show{ grid-column: 2 / 3; grid-row: 1; height:40px; }
+#flash-tts { grid-column: 3 / 4; grid-row: 1; height:40px; }
+#flash-prev{ grid-column: 1 / 3; grid-row: 2; height:40px; width:100%; font-size:0.95rem; }
+#flash-next{ grid-column: 3 / 5; grid-row: 2; height:40px; width:100%; font-size:0.95rem; }
+/* Responsive: en pantallas estrechas, 2 columnas */
+@media (max-width: 640px){
+  #flash-grade-row{ grid-template-columns: repeat(2, minmax(120px,1fr)); }
+  #flash-show{ grid-column: 1 / 2; grid-row: 1; }
+  #flash-tts { grid-column: 2 / 3; grid-row: 1; }
+  #flash-prev{ grid-column: 1 / 2; grid-row: 2; }
+  #flash-next{ grid-column: 2 / 3; grid-row: 2; }
+}
+
+/* ===== Flashcards: texto ===== */
+/* La cara con el TÉRMINO: centrado total, sin cortar palabras */
+#view-flash .flash-front{ display:grid !important; justify-items:center; align-items:center; }
+#view-flash .flash-front .term{
+  text-align:center; font-weight:700;
+  hyphens: manual !important;           /* no cortes automáticos */
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+  font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+  max-width: 92%;
+  margin: 0;
+}
+
+/* La cara con la DEFINICIÓN: centrado horizontal, inicio desde arriba */
+#view-flash .flash-back{ display:grid !important; justify-items:center; align-items:start; padding-top: clamp(12px, 2vw, 20px); }
+#view-flash .flash-back .def{
+  text-align:center; font-weight:600;
+  hyphens: auto; word-break: normal; overflow-wrap: anywhere;
+  font-size: clamp(1.1rem, 3.2vw, 1.6rem);
+  line-height: 1.35; max-width: 92%; margin: 0;
+}
+
+/* ===== Léelo Tú: reorganizar controles ===== */
+#leelo-controls{ display:grid !important; gap:10px; grid-template-columns: repeat(5, minmax(120px, 1fr)); align-items:center; }
+#leelo-prev{ grid-column: 1 / 3; grid-row: 2; width:100%; height:44px; font-size:0.95rem; }
+#leelo-next{ grid-column: 3 / 6; grid-row: 2; width:100%; height:44px; font-size:0.95rem; }
+#leelo-rec{ grid-column: 1; grid-row: 1; height:44px; }
+#leelo-stop{ grid-column: 2; grid-row: 1; height:44px; }
+#leelo-play{ grid-column: 3; grid-row: 1; height:44px; }
+#leelo-retry{ grid-column: 4; grid-row: 1; height:44px; }
+#leelo-tts{ grid-column: 5; grid-row: 1; height:44px; }
+@media (max-width: 768px){
+  #leelo-controls{ grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  #leelo-rec{ grid-column: 1; grid-row: 1; }
+  #leelo-stop{ grid-column: 2; grid-row: 1; }
+  #leelo-play{ grid-column: 1; grid-row: 2; }
+  #leelo-retry{ grid-column: 2; grid-row: 2; }
+  #leelo-tts{ grid-column: 1 / 3; grid-row: 3; }
+  #leelo-prev{ grid-column: 1; grid-row: 4; }
+  #leelo-next{ grid-column: 2; grid-row: 4; }
+}
+
+/* ===== Altura/ajuste fino: usar cálculo desde el tope de la tarjeta ===== */
+#view-flash .flash-inner{ max-height: var(--flash-max-h) !important; min-height: 320px; }
+#leelo-flash-card{ max-height: var(--leelo-max-h) !important; min-height: 320px; }
+
+</style>
+
+
+
+
+
+<style id="flash-front-nobreak">
+#view-flash .flash-front .term{
+  hyphens: none !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+  margin: 0 !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+}
+</style>
+
+
+
+
+
+
+
+
+<style id="flash-3d-restore">
+/* ==== Canonical 3D stack for Flashcards (front/back overlapped) ==== */
+#view-flash .flash-card { perspective: 1000px !important; background: transparent !important; }
+#view-flash .flash-inner {
+  position: relative !important;
+  transform-style: preserve-3d !important;
+  transition: transform 0.6s ease !important;
+  max-height: var(--flash-max-h) !important;
+  min-height: 320px !important;
+  height: auto !important;
+  background: #fff !important;
+  border-radius: inherit;
+}
+#view-flash .flash-inner.flipped { transform: rotateY(180deg) !important; }
+#view-flash .flash-face {
+  position: absolute !important;
+  inset: 0 !important; /* top:0 right:0 bottom:0 left:0 */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+  padding: 14px 20px !important;
+}
+#view-flash .flash-front { transform: rotateY(0deg) !important; }
+#view-flash .flash-back  { transform: rotateY(180deg) !important; }
+
+/* Typography */
+#view-flash .term {
+  margin: 0 !important; text-align: center !important; font-weight: 700 !important;
+  font-size: clamp(1.6rem, 4.6vw, 2.6rem) !important;
+  hyphens: none !important; word-break: keep-all !important; overflow-wrap: normal !important;
+  max-width: 92% !important;
+}
+#view-flash .def {
+  margin: 0 !important; text-align: center !important; font-weight: 600 !important;
+  font-size: clamp(1.1rem, 3.2vw, 1.6rem) !important; line-height: 1.35 !important;
+  hyphens: auto !important; word-break: normal !important; overflow-wrap: anywhere !important;
+  max-width: 92% !important;
+}
+</style>
+
+
+
+
+
+
+
+
+<style id="reader-mode-css">
+:root{ --page-scale: 1; }
+#reader-toggle, #reader-tools{
+  position: fixed; right: 12px; bottom: 12px; z-index: 9999;
+  display: inline-flex; gap: 8px;
+}
+#reader-toggle{
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+  background: #fff; box-shadow: var(--shadow); align-items: center; justify-content: center; cursor: pointer;
+  font-size: 18px;
+}
+#reader-tools{ display: none; align-items: center; }
+#reader-tools .btn{
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+  background: #fff; box-shadow: var(--shadow); align-items: center; justify-content: center; cursor: pointer; display: inline-flex;
+  font-size: 18px;
+}
+
+/* Only hide global headers in reader mode */
+.reader-mode header,
+.reader-mode #header,
+.reader-mode .app-header,
+.reader-mode .site-header { display: none !important; }
+
+/* Optional: scale main content slightly in reader mode (without hiding controls) */
+.reader-mode main,
+.reader-mode #app,
+.reader-mode .container { transform: scale(var(--page-scale)); transform-origin: top center; }
+</style>
+
+
+
+
+
+<style id="flash-pastel-simple">
+#view-flash .flash-face{ background: transparent !important; }
+#view-flash .flash-inner{ background: #fff !important; } /* default white; JS overrides inline */
+</style>
+
 </head>
-<body>
+<body data-reader-ui='1'>
+
+<div id="reader-toggle" title="Modo lectura">👁️</div>
+<div id="reader-tools" aria-hidden="true">
+  <div class="btn" id="reader-exit" title="Salir">✕</div>
+  <div class="btn" id="zoom-out" title="Alejar">−</div>
+  <div class="btn" id="zoom-in" title="Acercar">+</div>
+</div>
+
   <!-- User Selection Screen -->
   <div id="user-selection" class="user-selection">
     <div>
@@ -1335,11 +1607,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
           height: auto !important;
           margin: 0 auto;
         }
-        #view-flash .flash-inner{
-          width: 100% !important;
-          height: auto !important;             /* sin altura fija */
-          aspect-ratio: 16 / 10;               /* puedes cambiar a 3/2 si prefieres */
-          max-height: min(60svh, var(--flash-max-h));  /* límite sensible en móvil */
+        var(--flash-max-h);  /* límite sensible en móvil */
           box-sizing: border-box;
         }
     
@@ -1361,7 +1629,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
     
         /* En paisajes de poca altura, usa relación más apaisada */
         @media (max-height: 520px) and (orientation: landscape){
-          #view-flash .flash-inner{ max-height: 48svh; aspect-ratio: 16 / 9; }
+          var(--flash-max-h); aspect-ratio: 16 / 9; }
         }
       </style>
     
@@ -1381,9 +1649,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
             <div class="flash-face flash-front"><div class="term" id="flash-front">—</div></div>
             <div class="flash-face flash-back"><div class="def" id="flash-back">(haz clic o presiona espacio)</div></div>
           </div>
-        </div>
-      </div>
-    
+        <p id="flash-counter" class="muted" style="text-align:center;margin:6px 0 0 0;">1 / 1</p>
       <div class="row" id="flash-grade-row" style="gap: 10px; justify-content: center; margin-top: 20px">
         <button id="flash-prev" class="ghost" title="Anterior Flashcard">Anterior</button>
         <button id="flash-show" class="primary">Voltear</button>
@@ -1401,21 +1667,27 @@ header { z-index: 2000; }              /* el header crea el stacking context má
           function vh(){ return (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight; }
     
           function relayout(){
-            var topRow = sec.querySelector('.row.space-between');
-            var grade  = document.getElementById('flash-grade-row');
-            var help   = sec.querySelector('.muted');
-            var used   = 0;
-    
-            if(topRow) used += topRow.offsetHeight || 0;
-            if(grade)  used += grade.offsetHeight  || 0;
-            if(help)   used += help.offsetHeight   || 0;
-    
-            // margen de seguridad y paddings internos
-            used += 40;
-    
-            var avail = Math.max(220, vh() - used);
+            var card = sec.querySelector('.flash-inner, #leelo-flash-card, .flash-card, .flash-card2');
+            if(!card) return;
+            var panelStyles = getComputedStyle(sec);
+            var padB = parseFloat(panelStyles.paddingBottom) || 0;
+            var top = card.getBoundingClientRect().top;
+            var vH = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight;
+            var avail = Math.max(320, vH - top - padB - 12);
             sec.style.setProperty('--flash-max-h', Math.round(avail) + 'px');
-          }
+        }
+            }
+
+            // Panel paddings & safe margin
+            var panelStyles = getComputedStyle(sec);
+            used += parseFloat(panelStyles.paddingTop) + parseFloat(panelStyles.paddingBottom);
+            used += 20; // small safety
+
+            // viewport height
+            var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight;
+            var avail = Math.max(220, vh - used);
+            sec.style.setProperty('--flash-max-h', Math.round(avail) + 'px');
+        }
     
           // Recalcular en cambios de tamaño/orientación y cuando cambie el layout
           window.addEventListener('resize', relayout);
@@ -1469,13 +1741,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
       padding: clamp(8px, 2.4vw, 16px);
       min-height: 0 !important;
     }
-    #leelo-flash-card{
-      width: min(96vw, 860px);
-      height: auto !important;
-      margin: 0 auto;
-      /* El inner es el propio #leelo-flash-card en tu estructura */
-      aspect-ratio: 16 / 10;                  /* cambia a 3/2 si prefieres más alta */
-      max-height: min(60svh, var(--leelo-max-h));
+    var(--leelo-max-h);
       box-sizing: border-box;
     }
 
@@ -1506,7 +1772,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
 
     /* En paisajes de poca altura, prioriza relación más apaisada */
     @media (max-height: 520px) and (orientation: landscape){
-      #leelo-flash-card{ max-height: 48svh; aspect-ratio: 16 / 9; }
+      var(--leelo-max-h); aspect-ratio: 16 / 9; }
     }
   </style>
 
@@ -1558,22 +1824,26 @@ header { z-index: 2000; }              /* el header crea el stacking context má
       function vh(){ return (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight; }
 
       function relayout(){
-        var header = sec.querySelector('.row.space-between');
-        var controls = document.getElementById('leelo-controls');
-        var timerRow = sec.querySelector('#leelo-card > .row:nth-of-type(2)'); // la fila de timer/score
-        var recent   = document.getElementById('leelo-recent');
+            var card = sec.querySelector('.flash-inner, #leelo-flash-card, .flash-card, .flash-card2');
+            if(!card) return;
+            var panelStyles = getComputedStyle(sec);
+            var padB = parseFloat(panelStyles.paddingBottom) || 0;
+            var top = card.getBoundingClientRect().top;
+            var vH = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight;
+            var avail = Math.max(320, vH - top - padB - 12);
+            sec.style.setProperty('--leelo-max-h', Math.round(avail) + 'px');
+        }
+            }
 
-        var used = 0;
-        if(header)  used += header.offsetHeight || 0;
-        if(controls)used += controls.offsetHeight || 0;
-        if(timerRow)used += timerRow.offsetHeight || 0;
-        if(recent)  used += recent.offsetHeight || 0;
+            // include panel padding
+            var panelStyles = getComputedStyle(sec);
+            used += parseFloat(panelStyles.paddingTop) + parseFloat(panelStyles.paddingBottom);
+            used += 16; // smaller safety
 
-        used += 48; // margen/paddings seguros
-
-        var avail = Math.max(220, vh() - used);
-        sec.style.setProperty('--leelo-max-h', Math.round(avail) + 'px');
-      }
+            var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || window.innerHeight;
+            var avail = Math.max(220, vh - used);
+            sec.style.setProperty('--leelo-max-h', Math.round(avail) + 'px');
+        }
 
       window.addEventListener('resize', relayout);
       window.addEventListener('orientationchange', relayout);
@@ -1774,7 +2044,7 @@ header { z-index: 2000; }              /* el header crea el stacking context má
       <div class="grid cols-2">
         <div>
           <h4>Importar CSV/JSON</h4>
-          <input type="file" id="file-input" accept=".csv,.json" />
+          <input type="file" id="file-input" accept=".csv,.json,.xlsx,.xls,text/csv,application/json,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/octet-stream" />
           <p class="muted">CSV con encabezados: set_title, term, definition, extra_notes, tags, lang_term, lang_definition, difficulty</p>
           <button id="btn-import" class="primary" disabled>Importar</button>
           <div id="import-preview" class="muted" style="margin-top:8px"></div>
@@ -2348,11 +2618,135 @@ function addNewUser() {
     }
     qs('#flash-front').innerHTML = frontContent;
     qs('#flash-back').innerHTML = backContent;
+    
+    
+    
+    
+    
+    
+    // Pastel background per card (direct inline, overrides anything)
+    try {
+      const PASTELS = [
+        'linear-gradient(135deg,#ffd6e7 0%,#ffe9f3 100%)',
+        'linear-gradient(135deg,#d6f7ff 0%,#e9fbff 100%)',
+        'linear-gradient(135deg,#fff4d6 0%,#fff0e1 100%)',
+        'linear-gradient(135deg,#e8d6ff 0%,#f1eaff 100%)',
+        'linear-gradient(135deg,#d6ffe9 0%,#eafff4 100%)',
+        'linear-gradient(135deg,#fffbd6 0%,#fffde9 100%)',
+        'linear-gradient(135deg,#ffd6f7 0%,#ffeaff 100%)',
+        'linear-gradient(135deg,#d6fffd 0%,#eaffff 100%)',
+        'linear-gradient(135deg,#ffe0e0 0%,#fff1f1 100%)',
+        'linear-gradient(135deg,#ffe6d6 0%,#fff2e6 100%)',
+        'linear-gradient(135deg,#ffe6f2 0%,#fff0f7 100%)',
+        'linear-gradient(135deg,#e6f7ff 0%,#f0fbff 100%)',
+        'linear-gradient(135deg,#e6f9f2 0%,#f0fff7 100%)',
+        'linear-gradient(135deg,#e6ffe6 0%,#f2fff2 100%)',
+        'linear-gradient(135deg,#f2ffe6 0%,#f9fff0 100%)',
+        'linear-gradient(135deg,#f7ffe6 0%,#fbfff0 100%)',
+        'linear-gradient(135deg,#e6e9ff 0%,#f0f2ff 100%)',
+        'linear-gradient(135deg,#f0e6ff 0%,#f7f0ff 100%)',
+        'linear-gradient(135deg,#ffe6fb 0%,#fff0fd 100%)',
+        'linear-gradient(135deg,#ffe6ff 0%,#fff0ff 100%)',
+        'linear-gradient(135deg,#e6fff9 0%,#f0fffc 100%)',
+        'linear-gradient(135deg,#e6fff0 0%,#f0fff5 100%)',
+        'linear-gradient(135deg,#fff0e6 0%,#fff7f0 100%)',
+        'linear-gradient(135deg,#fff5e6 0%,#fffbf0 100%)',
+        'linear-gradient(135deg,#f9e6ff 0%,#fcf0ff 100%)',
+        'linear-gradient(135deg,#e6f0ff 0%,#f0f7ff 100%)',
+        'linear-gradient(135deg,#e6fffa 0%,#f0fffd 100%)',
+        'linear-gradient(135deg,#fff0f0 0%,#fff7f7 100%)',
+        'linear-gradient(135deg,#f0ffe6 0%,#f7fff0 100%)',
+        'linear-gradient(135deg,#e6fff5 0%,#f0fffa 100%)',
+        'linear-gradient(135deg,#fff0e6 0%,#fff5eb 100%)',
+        'linear-gradient(135deg,#f2f7ff 0%,#f7faff 100%)',
+        'linear-gradient(135deg,#f7f2ff 0%,#faf7ff 100%)'
+      ];
+      const innerEl = document.getElementById('flash-inner') || document.querySelector('#view-flash .flash-inner');
+      const idxForColor = (typeof flashState?.index === 'number' ? flashState.index : 0);
+      if (innerEl && innerEl.style) {
+        innerEl.style.setProperty('background', PASTELS[Math.abs(idxForColor) % PASTELS.length], 'important');
+        innerEl.style.setProperty('background-color', 'transparent', 'important');
+      }
+    } catch(e) {}
+// Apply pastel background per card
+    try {
+      const PASTELS = [
+        'linear-gradient(135deg,#ffd6e7 0%,#ffe9f3 100%)',
+        'linear-gradient(135deg,#d6f7ff 0%,#e9fbff 100%)',
+        'linear-gradient(135deg,#fff4d6 0%,#fff0e1 100%)',
+        'linear-gradient(135deg,#e8d6ff 0%,#f1eaff 100%)',
+        'linear-gradient(135deg,#d6ffe9 0%,#eafff4 100%)',
+        'linear-gradient(135deg,#fffbd6 0%,#fffde9 100%)',
+        'linear-gradient(135deg,#ffd6f7 0%,#ffeaff 100%)',
+        'linear-gradient(135deg,#d6fffd 0%,#eaffff 100%)',
+        'linear-gradient(135deg,#ffe0e0 0%,#fff1f1 100%)',
+        'linear-gradient(135deg,#ffe6d6 0%,#fff2e6 100%)',
+        'linear-gradient(135deg,#ffe6f2 0%,#fff0f7 100%)',
+        'linear-gradient(135deg,#e6f7ff 0%,#f0fbff 100%)',
+        'linear-gradient(135deg,#e6f9f2 0%,#f0fff7 100%)',
+        'linear-gradient(135deg,#e6ffe6 0%,#f2fff2 100%)',
+        'linear-gradient(135deg,#f2ffe6 0%,#f9fff0 100%)',
+        'linear-gradient(135deg,#f7ffe6 0%,#fbfff0 100%)',
+        'linear-gradient(135deg,#e6e9ff 0%,#f0f2ff 100%)',
+        'linear-gradient(135deg,#f0e6ff 0%,#f7f0ff 100%)',
+        'linear-gradient(135deg,#ffe6fb 0%,#fff0fd 100%)',
+        'linear-gradient(135deg,#ffe6ff 0%,#fff0ff 100%)',
+        'linear-gradient(135deg,#e6fff9 0%,#f0fffc 100%)',
+        'linear-gradient(135deg,#e6fff0 0%,#f0fff5 100%)',
+        'linear-gradient(135deg,#fff0e6 0%,#fff7f0 100%)',
+        'linear-gradient(135deg,#fff5e6 0%,#fffbf0 100%)',
+        'linear-gradient(135deg,#f9e6ff 0%,#fcf0ff 100%)',
+        'linear-gradient(135deg,#e6f0ff 0%,#f0f7ff 100%)',
+        'linear-gradient(135deg,#e6fffa 0%,#f0fffd 100%)',
+        'linear-gradient(135deg,#fff0f0 0%,#fff7f7 100%)',
+        'linear-gradient(135deg,#f0ffe6 0%,#f7fff0 100%)',
+        'linear-gradient(135deg,#e6fff5 0%,#f0fffa 100%)',
+        'linear-gradient(135deg,#fff0e6 0%,#fff5eb 100%)',
+        'linear-gradient(135deg,#f2f7ff 0%,#f7faff 100%)',
+        'linear-gradient(135deg,#f7f2ff 0%,#faf7ff 100%)'
+      ];
+      const innerEl = document.getElementById('flash-inner') || document.querySelector('#view-flash .flash-inner');
+      const idxForColor = (Array.isArray(flashState.order) ? flashState.order[flashState.index] : flashState.index) || 0;
+      if (innerEl) innerEl.style.setProperty('--flash-grad', PASTELS[Math.abs(idxForColor) % PASTELS.length]);
+    } catch(e) {}
+try {
+      var cnt = document.getElementById('flash-counter');
+      if (cnt) {
+        var total = items.length;
+        var pos = Math.min(total, Math.max(1, (flashState.index + 1)));
+        cnt.textContent = pos + ' / ' + total;
+      }
+    } catch(e) {}
+    try {
+      var cnt = document.getElementById('flash-counter');
+      if (cnt) {
+        var total = items.length;
+        var pos = Math.min(total, Math.max(1, (flashState.index + 1)));
+        cnt.textContent = pos + ' / ' + total;
+      }
+    } catch(e) {}
+    (function(){ try {
+      var cnt = document.getElementById('flash-counter');
+      if (cnt) {
+        var total = items.length;
+        var pos = Math.min(total, Math.max(1, (flashState.index + 1)));
+        cnt.textContent = pos + ' / ' + total;
+      }
+    } catch(e){} })();
+    try {
+      var cnt = document.getElementById('flash-counter');
+      if (cnt) {
+        var total = items.length;
+        var pos = Math.min(total, Math.max(1, (flashState.index + 1)));
+        cnt.textContent = pos + ' / ' + total;
+      }
+    } catch(e) { /* ignore */ }
     inner.classList.remove('flipped');
   }
-  function flashFlip() {
-    qs('#flash-inner').classList.toggle('flipped');
-  }
+  function flashFlip(){
+  var node = document.querySelector('#view-flash .flash-inner');
+  if (node) node.classList.toggle('flipped');
+}
   function flashPrev() {
     const len = flashState.order.length;
     if (!len) return;
@@ -3297,6 +3691,50 @@ function addNewUser() {
     const reader = new FileReader();
     reader.onload = () => {
       const txt = reader.result;
+      // Excel path: read as ArrayBuffer and convert first sheet to CSV using SheetJS
+      if (/\.xlsx?$/i.test(f.name)) {
+        const r2 = new FileReader();
+        r2.onload = () => {
+          try {
+            const data = new Uint8Array(r2.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            // Reuse existing CSV flow
+            try {
+              const rows = parseCSV(csv);
+              if (!rows.length) { alert('Excel vacío'); return; }
+              const headers = rows.shift().map(h => h.toLowerCase());
+              function idx(name) { return headers.indexOf(name); }
+              importRows = [];
+              rows.forEach(r => {
+                const rec = {
+                  set_title: r[idx('set_title')] || '',
+                  term: r[idx('term')] || '',
+                  definition: r[idx('definition')] || '',
+                  extra_notes: r[idx('extra_notes')] || '',
+                  tags: (r[idx('tags')] || '').split(',').map(x => x.trim()).filter(x => !!x),
+                  lang_term: r[idx('lang_term')] || '',
+                  lang_definition: r[idx('lang_definition')] || '',
+                  difficulty: r[idx('difficulty')] || ''
+                };
+                if (rec.term && rec.definition) importRows.push(rec);
+              });
+              qs('#import-preview').innerText = 'Listas ' + importRows.length + ' filas válidas.';
+              qs('#btn-import').disabled = !importRows.length;
+            } catch(err) {
+              console.error(err);
+              alert('No se pudo procesar la hoja de Excel como CSV');
+            }
+          } catch(err) {
+            console.error(err);
+            alert('Excel inválido');
+          }
+        };
+        r2.readAsArrayBuffer(f);
+        return; // Evita continuar por la rama de texto
+      }
+    
       importRows = [];
       if (/\.json$/i.test(f.name)) {
         try {
@@ -4572,6 +5010,201 @@ document.addEventListener('click', function(e){
 (function(){
   function setVh(){ document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px'); }
   setVh(); window.addEventListener('resize', setVh);
+})();
+</script>
+
+
+<script id="flash-pastel-apply">
+(function(){
+  // Soft pastel palette (rotates by index)
+  var FLASH_PASTELS = [
+    'linear-gradient(135deg, #ffd6e7 0%, #ffe9f3 100%)', // pink-rose
+    'linear-gradient(135deg, #d6f7ff 0%, #e9fbff 100%)', // baby blue
+    'linear-gradient(135deg, #fff4d6 0%, #fff0e1 100%)', // peach/cream
+    'linear-gradient(135deg, #e8d6ff 0%, #f1eaff 100%)', // lavender
+    'linear-gradient(135deg, #d6ffe9 0%, #eafff4 100%)', // mint
+    'linear-gradient(135deg, #fffbd6 0%, #fffde9 100%)', // lemon
+    'linear-gradient(135deg, #ffd6f7 0%, #ffeaff 100%)', // pink-lilac
+    'linear-gradient(135deg, #d6fffd 0%, #eaffff 100%)'  // aqua
+  ];
+
+  function applyPastel(i){
+    var inner = document.querySelector('#view-flash .flash-inner');
+    if (!inner) return;
+    var idx = (i||0) % FLASH_PASTELS.length;
+    inner.style.setProperty('--flash-grad', FLASH_PASTELS[idx]);
+  }
+
+  // Hook into renderFlash without breaking existing logic
+  var _renderFlash = window.renderFlash;
+  window.renderFlash = function(){
+    if (typeof _renderFlash === 'function') _renderFlash();
+    try {
+      // flashState.index is 0-based, order maps to item; using index gives a nice rotation
+      var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+      applyPastel(pos);
+    } catch(e){}
+  };
+
+  // Initial try in case first render already present
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+      applyPastel(pos);
+    } catch(e){}
+  });
+})();
+</script>
+
+
+<script id="flash-pastel-robust">
+(function(){
+  var FLASH_PASTELS = [
+    'linear-gradient(135deg, #ffd6e7 0%, #ffe9f3 100%)',
+    'linear-gradient(135deg, #d6f7ff 0%, #e9fbff 100%)',
+    'linear-gradient(135deg, #fff4d6 0%, #fff0e1 100%)',
+    'linear-gradient(135deg, #e8d6ff 0%, #f1eaff 100%)',
+    'linear-gradient(135deg, #d6ffe9 0%, #eafff4 100%)',
+    'linear-gradient(135deg, #fffbd6 0%, #fffde9 100%)',
+    'linear-gradient(135deg, #ffd6f7 0%, #ffeaff 100%)',
+    'linear-gradient(135deg, #d6fffd 0%, #eaffff 100%)'
+  ];
+  function applyPastel(i){
+    var inner = document.querySelector('#view-flash .flash-inner');
+    if (!inner) return;
+    var idx = Math.abs(i||0) % FLASH_PASTELS.length;
+    inner.style.setProperty('--flash-grad', FLASH_PASTELS[idx]);
+  }
+  function hookOnce(){
+    if (typeof window.renderFlash === 'function' && !window.renderFlash.__pastelWrapped){
+      var orig = window.renderFlash;
+      window.renderFlash = function(){
+        var res = orig.apply(this, arguments);
+        try {
+          var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+          applyPastel(pos);
+        } catch(e){}
+        return res;
+      };
+      window.renderFlash.__pastelWrapped = true;
+      // apply immediately
+      try {
+        var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+        applyPastel(pos);
+      } catch(e){}
+    }
+  }
+  // Retry wrapping for a short period to ensure renderFlash is defined
+  var tries = 0, iv = setInterval(function(){
+    hookOnce();
+    tries++; if (tries > 80) clearInterval(iv);
+  }, 100);
+  // Fallback: watch DOM changes on the inner
+  document.addEventListener('DOMContentLoaded', function(){
+    hookOnce();
+    var inner = document.querySelector('#view-flash .flash-inner');
+    if (inner && 'MutationObserver' in window){
+      var mo = new MutationObserver(function(){ 
+        var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+        applyPastel(pos);
+      });
+      mo.observe(inner, {childList:true, subtree:true});
+    } else {
+      // periodic gentle refresh as last resort
+      setInterval(function(){
+        var pos = (window.flashState && typeof window.flashState.index === 'number') ? window.flashState.index : 0;
+        applyPastel(pos);
+      }, 1000);
+    }
+  });
+})();
+</script>
+
+
+
+
+
+
+
+
+<script id="reader-mode-js">
+(function(){
+  function applyScale(){ document.documentElement.style.setProperty('--page-scale', window.__pageScale || 1); }
+  function enter(){
+    document.body.classList.add('reader-mode');
+    var t = document.getElementById('reader-toggle');
+    var tools = document.getElementById('reader-tools');
+    if (t) t.style.display='none';
+    if (tools) tools.style.display='inline-flex';
+    window.__pageScale = 0.9; applyScale();
+  }
+  function exit(){
+    document.body.classList.remove('reader-mode');
+    var t = document.getElementById('reader-toggle');
+    var tools = document.getElementById('reader-tools');
+    if (t) t.style.display='inline-flex';
+    if (tools) tools.style.display='none';
+    window.__pageScale = 1; applyScale();
+  }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  document.addEventListener('DOMContentLoaded', function(){
+    var toggle = document.getElementById('reader-toggle');
+    var exitBtn = document.getElementById('reader-exit');
+    var zoomOut = document.getElementById('zoom-out');
+    var zoomIn  = document.getElementById('zoom-in');
+    if (toggle) toggle.addEventListener('click', enter);
+    if (exitBtn) exitBtn.addEventListener('click', exit);
+    if (zoomOut) zoomOut.addEventListener('click', function(){ window.__pageScale = clamp((window.__pageScale||0.9)-0.1, 0.2, 2); applyScale(); });
+    if (zoomIn)  zoomIn.addEventListener('click',  function(){ window.__pageScale = clamp((window.__pageScale||0.9)+0.1, 0.2, 2); applyScale(); });
+    applyScale();
+  });
+})();
+</script>
+
+
+<script id="flash-pastel-robust-v3">
+(function(){
+  var PASTELS = [
+    'linear-gradient(135deg,#ffd6e7 0%,#ffe9f3 100%)',
+    'linear-gradient(135deg,#d6f7ff 0%,#e9fbff 100%)',
+    'linear-gradient(135deg,#fff4d6 0%,#fff0e1 100%)',
+    'linear-gradient(135deg,#e8d6ff 0%,#f1eaff 100%)',
+    'linear-gradient(135deg,#d6ffe9 0%,#eafff4 100%)',
+    'linear-gradient(135deg,#fffbd6 0%,#fffde9 100%)',
+    'linear-gradient(135deg,#ffd6f7 0%,#ffeaff 100%)',
+    'linear-gradient(135deg,#d6fffd 0%,#eaffff 100%)'
+  ];
+  function idxFromState(){
+    try {
+      if (!window.flashState) return 0;
+      var i = window.flashState.index|0;
+      // If there is a mapped order array, use its value to vary well
+      if (Array.isArray(window.flashState.order)) i = window.flashState.order[i]|0;
+      return Math.abs(i);
+    } catch(e){ return 0; }
+  }
+  function apply(){
+    var inner = document.querySelector('#view-flash .flash-inner');
+    if (!inner) return;
+    inner.style.setProperty('--flash-grad', PASTELS[idxFromState()%PASTELS.length]);
+  }
+  function wire(){
+    ['#flash-next','#flash-prev','#flash-show','#flash-tts'].forEach(function(sel){
+      var btn = document.querySelector(sel);
+      if (btn && !btn.__pastelWired){ btn.addEventListener('click', function(){ setTimeout(apply, 0); }); btn.__pastelWired=true; }
+    });
+    var inner = document.querySelector('#view-flash .flash-inner');
+    if (inner && 'MutationObserver' in window && !inner.__pastelObserver){
+      var mo = new MutationObserver(function(){ setTimeout(apply,0); });
+      mo.observe(inner, {childList:true, subtree:true});
+      inner.__pastelObserver = true;
+    }
+    window.addEventListener('hashchange', function(){ setTimeout(apply,0); });
+    window.addEventListener('popstate', function(){ setTimeout(apply,0); });
+    apply();
+  }
+  var tries=0, iv=setInterval(function(){ wire(); tries++; if(tries>80) clearInterval(iv); }, 100);
+  document.addEventListener('DOMContentLoaded', wire);
 })();
 </script>
 
