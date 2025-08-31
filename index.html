@@ -159,6 +159,73 @@
       background: linear-gradient(90deg, var(--accent), var(--accent2));
     }
 
+    /*
+     * Learn mode feedback styling.
+     * When a user answers a question the feedback and next actions
+     * appear below the card.  Define a dedicated class so old
+     * feedback can be easily purged before new feedback is injected.
+     */
+    .learn-feedback {
+      font-weight: 600;
+      margin-top: 12px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    .learn-feedback.correct {
+      color: var(--success);
+      background: #f0fff4;
+      border: 1px solid var(--success);
+    }
+    .learn-feedback.incorrect {
+      color: var(--danger);
+      background: #fff5f5;
+      border: 1px solid var(--danger);
+    }
+    .learn-next {
+      margin-top: 8px;
+    }
+
+    /* Ensure inputs and textareas inside the new sticky note modal fill
+       the available width without overflowing. */
+    #scrim-sticky-note input,
+    #scrim-sticky-note textarea {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Improve the focus session overlay: blur the background and
+       darken the scrim for better focus.  Increase the modal
+       dimensions and text area height for better usability. */
+    #scrim-sticky-session {
+      backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.4);
+    }
+    #scrim-sticky-session .modal {
+      max-width: 800px;
+      width: 96%;
+    }
+    #scrim-sticky-session textarea {
+      min-height: 160px;
+    }
+
+    /* Styling for lines drawn between pair items.  The SVG sits
+       absolutely over the pair grid so mouse clicks pass through. */
+    #pair-area { position: relative; }
+    #pair-lines svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+    .pair-line {
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
     /* Image support for cards and learn/test modes */
     .card-image {
       max-width: 100%;
@@ -312,11 +379,13 @@
       gap: 8px;
     }
     .match-card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      /* Allow cards to grow when content wraps */
-      /* Provide extra height so long terms/definitions fit within the card */
+      /* Memory match cards have been redesigned to better complement
+         the pastel theme.  A soft panel background, thicker border and
+         generous padding give each card a friendly appearance.  A
+         hover effect lifts the card slightly to hint at interactivity. */
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 20px;
       min-height: 150px;
       display: flex;
       align-items: center;
@@ -324,15 +393,17 @@
       cursor: pointer;
       user-select: none;
       box-shadow: var(--shadow);
-      transition: background 0.2s;
-      padding: 8px;
+      transition: transform 0.2s, background 0.3s;
+      padding: 12px;
       text-align: center;
-      /* Standardize memory card font and allow wrapping of long text */
-      font-size: 1rem;
+      font-size: 1.1rem;
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: break-word;
       line-height: 1.2;
+    }
+    .match-card:hover {
+      transform: translateY(-4px);
     }
     .match-card.revealed {
       background: var(--accent3);
@@ -409,6 +480,16 @@
     .learn-card .item {
       font-size: 1.2rem;
     }
+    /*
+     * The scrim overlays are used for all modal dialogs throughout the
+     * application (creating sets, entering sticky notes, focus sessions
+     * etc.). They must always sit on top of every other interface element,
+     * including the sticky header and navigation tabs.  Previously the
+     * header had a z‑index of 2000, which caused modals to appear
+     * underneath it.  Bump the scrim z‑index well above the header so
+     * modals cover the entire viewport.  A high z‑index (5000) ensures
+     * nothing else eclipses the overlays.
+     */
     .scrim {
       position: fixed;
       inset: 0;
@@ -416,7 +497,29 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 90;
+      z-index: 5000;
+    }
+
+    /* Sticky Notes: emphasise the focus session toggle with a deep navy
+       colour so it stands out from the other ghost buttons.  The dark
+       background contrasts against the soft pastel palette and the white
+       text improves readability. */
+    #sticky-controls #sticky-session {
+      background: #0b3d91;
+      color: #ffffff;
+      border-color: #072a57;
+    }
+    #sticky-controls #sticky-session:hover {
+      background: #0c46a6;
+    }
+
+    /* Give the focus session modal an inviting appearance by blending
+       the panel gradient into a lighter hue and thickening the border.
+       The personalised selector targets only the sticky session overlay
+       leaving other modals untouched. */
+    #scrim-sticky-session .modal {
+      background: linear-gradient(180deg, var(--panel), var(--bg));
+      border-width: 2px;
     }
     .modal {
       background: var(--panel);
@@ -1636,6 +1739,8 @@ header { z-index: 2000; }              /* el header crea el stacking context má
         <button id="nav-pair">Parear</button>
         <button id="nav-drag">Token Drag</button>
         <button id="nav-cloze">Elaborar</button>
+        <!-- Added sticky notes navigation tab -->
+        <button id="nav-sticky">Sticky Notes</button>
         <button id="nav-import">Importar/Exportar</button>
       </div>
     </header>
@@ -2120,6 +2225,122 @@ header { z-index: 2000; }              /* el header crea el stacking context má
       </div>
     </section>
 
+    <!-- Sticky Notes view -->
+    <section id="view-sticky" class="panel hidden">
+      <!-- Scoped styles for sticky notes board -->
+      <style>
+        /* Sticky notes board scoped to #view-sticky to avoid leaking styles */
+        /* Define a default alpha for sticky note backgrounds so palette colors are visible */
+        #view-sticky {
+          --card-alpha: 1;
+        }
+        #view-sticky .board-wrap { position: relative; overflow: auto; background: var(--bg); }
+        #view-sticky .board { position: relative; width: 2200px; height: 1600px; margin: 18px; background: transparent; transform-origin: top left; }
+        #view-sticky .note { position: absolute; border-radius: 16px; padding: 10px 10px 12px 10px; box-shadow: var(--shadow); border: 1px solid rgba(190,24,93,.15); user-select: none; }
+        #view-sticky .note .chrome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        #view-sticky .note .drag-handle { cursor: grab; font-size: 12px; opacity: .7; }
+        #view-sticky .note.dragging .drag-handle { cursor: grabbing; }
+        #view-sticky .note .tools { display: flex; gap: 6px; align-items: center; }
+        #view-sticky .icon { cursor: pointer; border: none; background: #ffffffcc; padding: 4px 6px; border-radius: 8px; font-size: 12px; border: 1px solid #f3d3e4; }
+        #view-sticky .icon:hover { background: #fff; }
+        #view-sticky .term { font-weight: 800; font-size: 16px; color: #3a3a3a; }
+        #view-sticky .def { margin-top: 6px; font-size: 14px; line-height: 1.25; color: #3a3a3a; }
+        #view-sticky .size-s { width: 220px; min-height: 110px; font-size: 13px; }
+        #view-sticky .size-m { width: 280px; min-height: 140px; }
+        #view-sticky .size-l { width: 360px; min-height: 200px; font-size: 16px; }
+        #view-sticky .ghost { opacity: .6; }
+        #view-sticky .hidden-def .def { filter: blur(8px); opacity: .15; }
+        #view-sticky .revealed .def { filter: none; opacity: 1; }
+        /* Palette colors for sticky notes */
+        #view-sticky .p-1 { background: hsl(330 100% 96% / var(--card-alpha)); }
+        #view-sticky .p-2 { background: hsl(340 100% 92% / var(--card-alpha)); }
+        #view-sticky .p-3 { background: hsl(20 100% 95% / var(--card-alpha)); }
+        #view-sticky .p-4 { background: hsl(280 100% 96% / var(--card-alpha)); }
+        #view-sticky .p-5 { background: hsl(200 100% 96% / var(--card-alpha)); }
+        #view-sticky .p-6 { background: hsl(150 100% 94% / var(--card-alpha)); }
+        #view-sticky .p-7 { background: hsl(50 100% 95% / var(--card-alpha)); }
+        #view-sticky .p-8 { background: hsl(10 100% 95% / var(--card-alpha)); }
+        #view-sticky .p-9 { background: hsl(260 100% 97% / var(--card-alpha)); }
+        #view-sticky .p-10 { background: hsl(180 100% 96% / var(--card-alpha)); }
+      </style>
+      <div class="row space-between">
+        <h3 class="section-title">Sticky Notes</h3>
+        <div class="row" style="gap:6px; flex-wrap:wrap" id="sticky-controls">
+          <!-- Select set for sticky notes -->
+          <select id="select-sticky" title="Seleccionar set"></select>
+          <button id="sticky-new" class="primary">Nueva nota</button>
+          <button id="sticky-clear" class="danger">Borrar todas</button>
+          <button id="sticky-auto" class="ghost">Auto-layout</button>
+          <button id="sticky-shuffle" class="ghost">Esparcir</button>
+          <button id="sticky-stack" class="ghost">Apilar por color</button>
+          <button id="sticky-hide" class="ghost">Ocultar definiciones</button>
+          <!-- Focus session controls -->
+          <button id="sticky-session" class="ghost">Sesión de enfoque</button>
+          <label style="display:flex; align-items:center; gap:4px;"><span style="font-size:14px">Min:</span><input id="sticky-minutes" type="number" min="1" max="60" value="8" style="width:60px;"></label>
+          <!-- Zoom control -->
+          <label style="display:flex; align-items:center; gap:4px;"><span style="font-size:14px">Zoom</span><input id="sticky-zoom" type="range" min="0.5" max="2" step="0.1" value="1" style="width:80px;"></label>
+
+          <!-- Fullscreen toggle for sticky notes.  This button allows the
+               sticky notes board to occupy the entire viewport.  An
+               inline SVG is used for the icon so no external assets
+               are required. -->
+          <button id="sticky-fullscreen" class="ghost" title="Pantalla completa" style="display:flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3h6v2H5v4H3V3z"/>
+              <path d="M21 3v6h-2V5h-4V3h6z"/>
+              <path d="M21 21h-6v-2h4v-4h2v6z"/>
+              <path d="M3 21v-6h2v4h4v2H3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="sticky-board-wrap" class="board-wrap">
+        <div id="sticky-board" class="board"></div>
+      </div>
+    </section>
+
+  <!-- Modal for creating a new sticky note -->
+  <div class="scrim" id="scrim-sticky-note" style="display:none;">
+    <div class="modal">
+      <h3 style="margin-top:0;">Nueva nota</h3>
+      <input id="sticky-term-input" type="text" placeholder="Término" style="width:100%; margin-bottom:8px;" />
+      <textarea id="sticky-def-input" placeholder="Definición" style="width:100%; min-height:80px;"></textarea>
+      <div class="row" style="justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button id="sticky-cancel-note" class="ghost">Cancelar</button>
+        <button id="sticky-save-note" class="primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for focus session (sesión de enfoque) -->
+  <div class="scrim" id="scrim-sticky-session" style="display:none;">
+    <!-- Enhanced focus session overlay replicating the study board UI -->
+    <div class="modal" style="max-width:640px; width:92%; padding:16px;">
+      <div class="head" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0;">Sesión de enfoque</h3>
+        <span class="pill" id="sticky-sess-progress">0 / 0</span>
+        <span class="pill" id="sticky-sess-score">0%</span>
+        <span class="pill mono" id="sticky-sess-timer">08:00</span>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="term" id="sticky-sess-term" style="font-size:1.6rem; font-weight:700;"></div>
+        <textarea id="sticky-sess-input" placeholder="Escribe la definición (opcional)…" style="margin-top:8px; width:95%; min-height:120px;"></textarea>
+        <div class="def hidden" id="sticky-sess-def" style="margin-top:8px;"></div>
+        <div class="row" style="gap:6px; margin-top:12px; flex-wrap:wrap; align-items:center;">
+          <button id="sticky-sess-reveal" class="primary">Revelar <span class="kbd">Enter</span></button>
+          <button id="sticky-sess-prev" class="ghost">← Anterior</button>
+          <button id="sticky-sess-next" class="ghost">Siguiente →</button>
+          <button id="sticky-sess-easy" class="primary">Fácil <span class="kbd">3</span></button>
+          <button id="sticky-sess-doubt" class="primary">Duda <span class="kbd">2</span></button>
+          <button id="sticky-sess-hard" class="primary">Difícil <span class="kbd">1</span></button>
+          <span id="sticky-sess-feedback" class="muted" style="margin-left:8px;"></span>
+          <button id="sticky-sess-end" class="warn" style="margin-left:auto;">Finalizar</button>
+        </div>
+        <div id="sticky-sess-summary" class="muted" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
     <!-- Import/Export view -->
     <section id="view-import" class="panel hidden">
       <h3 class="section-title">Importar / Exportar</h3>
@@ -2364,6 +2585,8 @@ header { z-index: 2000; }              /* el header crea el stacking context má
   const STORAGE_KEY = 'penguQuizlet:v5';
 // Database structure now also tracks folders for organizing sets
 let db = { sets: {}, items: {}, progress: {}, folders: {} };
+// expose db globally so other modules (e.g., sticky notes) can access it via window.db
+window.db = db;
 
   // === User Management Functions ===
   function renderUserSelection() {
@@ -2480,14 +2703,18 @@ function addNewUser() {
     if (userData) {
       try {
         db = JSON.parse(userData);
+        // keep global db reference in sync
+        window.db = db;
       } catch (e) {
         // fallback to empty db on parse error
         db = { sets:{}, items:{}, progress:{}, folders:{} };
+        window.db = db;
         console.warn('Failed to load user data, using default');
       }
     } else {
       // initialize empty db for new user so sets are not shared
       db = { sets:{}, items:{}, progress:{}, folders:{} };
+      window.db = db;
       saveUserData();
     }
     renderAll();
@@ -2601,7 +2828,14 @@ function addNewUser() {
         top.appendChild(left);
         const actions = el('div', { className: 'row', style: 'gap:8px; flex-wrap:wrap' });
         const btnStudy = el('button', { innerText: 'Abrir' });
-        btnStudy.onclick = () => { currentSet = id; syncSelectors(); switchView('flash'); initFlash(); };
+        btnStudy.onclick = () => {
+          // When opening a set, update both the local and global currentSet references
+          currentSet = id;
+          window.currentSet = currentSet;
+          syncSelectors();
+          switchView('flash');
+          initFlash();
+        };
         const btnEdit = el('button', { innerText: 'Añadir tarjeta', className: 'ghost' });
         btnEdit.onclick = () => { addCardPrompt(id); };
         const btnDelete = el('button', { innerText: 'Eliminar', className: 'danger' });
@@ -2650,7 +2884,7 @@ function addNewUser() {
     Object.values(db.sets).forEach(s => {
       options += `<option value="${s.id}"${s.id === currentSet ? ' selected' : ''}>${s.title}</option>`;
     });
-    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze','select-leelo','select-drag'].forEach(id => {
+    ['select-flash','select-learn','select-test','select-match','select-pair','select-comb','select-cloze','select-leelo','select-drag','select-sticky'].forEach(id => {
       const select = qs('#' + id);
       if (select) select.innerHTML = options;
     });
@@ -2671,6 +2905,8 @@ function addNewUser() {
     const setId = sel.value || currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Mirror to global so other modules (e.g., sticky notes) can access the selected set
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     flashState.order = items.map((_, i) => i);
     flashState.index = 0;
@@ -2990,6 +3226,8 @@ try {
       return;
     }
     currentSet = setId;
+    // Update global reference for sticky notes and other modules
+    window.currentSet = currentSet;
     ensureProgress(setId);
     const items = db.items[setId] || [];
     const p = db.progress[setId] || {};
@@ -3093,20 +3331,29 @@ try {
     // grade the item
     gradeLearn(q.id, isCorrect ? 5 : 2);
     if (isCorrect) window.confettiLaunch(140);
-    // Build feedback area
     const area = qs('#learn-stage');
-    const feedback = el('div', { className:'muted', style:'margin-top:12px' });
+    // Disable all answer buttons within the current card to prevent
+    // multiple submissions which could lead to duplicated feedback.
+    area.querySelectorAll('.learn-card button').forEach(btn => { btn.disabled = true; });
+    // Remove any previous feedback or next controls to avoid stacking
+    area.querySelectorAll('.learn-feedback, .learn-next').forEach(el => el.remove());
+    // Build feedback element with dedicated classes for styling
+    const feedback = el('div', { className:'learn-feedback ' + (isCorrect ? 'correct' : 'incorrect') });
     feedback.innerText = isCorrect ? '✓ Correcto' : `✗ Incorrecto. Resp.: ${q.answer}`;
     area.appendChild(feedback);
     // Create next button
-    const nextBtn = el('button', { className:'ghost', innerText:'Siguiente', style:'margin-top:8px' });
+    const nextBtn = el('button', { className:'ghost learn-next', innerText:'Siguiente' });
     nextBtn.onclick = () => {
-      clearTimeout(learnTimer);
-      learnTimer = null;
+      // Cancel the pending auto‑advance timer if present
+      if (learnTimer) {
+        clearTimeout(learnTimer);
+        learnTimer = null;
+      }
       renderLearn();
     };
     area.appendChild(nextBtn);
     // Schedule auto-advance in 10 seconds
+    if (learnTimer) clearTimeout(learnTimer);
     learnTimer = setTimeout(() => {
       learnTimer = null;
       renderLearn();
@@ -3142,6 +3389,8 @@ try {
     const setId = qs('#select-test').value || currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Keep global currentSet in sync
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     const n = clamp(parseInt(qs('#test-count').value || '10', 10), 5, 200);
     const mix = qs('#test-mode').value;
@@ -3367,6 +3616,8 @@ try {
     const setId = qs('#select-match').value || currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
     // Determine number of pairs to use
@@ -3431,6 +3682,8 @@ try {
     const setId = qs('#select-pair').value || currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
     let count = items.length;
@@ -3462,7 +3715,14 @@ try {
     const leftCol = el('div');
     const rightCol = el('div');
     pairState.left.forEach(item => {
-      const btn = el('button', { className:'item', style:'display:block;width:100%;margin-bottom:6px;', innerText:item.text });
+      const btn = el('button', {
+        className:'item',
+        style:'display:block;width:100%;margin-bottom:6px;',
+        innerText:item.text
+      });
+      // set data attributes to locate elements later when drawing lines
+      btn.dataset.id = item.id;
+      btn.dataset.side = 'left';
       if (pairState.matches.includes(item.id)) {
         btn.disabled = true;
         btn.classList.add('correct');
@@ -3478,7 +3738,14 @@ try {
       leftCol.appendChild(btn);
     });
     pairState.right.forEach(item => {
-      const btn = el('button', { className:'item', style:'display:block;width:100%;margin-bottom:6px;', innerText:item.text });
+      const btn = el('button', {
+        className:'item',
+        style:'display:block;width:100%;margin-bottom:6px;',
+        innerText:item.text
+      });
+      // set data attributes to locate elements later when drawing lines
+      btn.dataset.id = item.id;
+      btn.dataset.side = 'right';
       if (pairState.matches.includes(item.id)) {
         btn.disabled = true;
         btn.classList.add('correct');
@@ -3518,10 +3785,78 @@ try {
       };
       rightCol.appendChild(btn);
     });
-    const grid = el('div', { className:'grid', style:'grid-template-columns:1fr 1fr; gap:12px;' });
+    const grid = el('div', { className:'grid', style:'grid-template-columns:1fr 1fr; gap:12px; position: relative;' });
     grid.appendChild(leftCol);
     grid.appendChild(rightCol);
     area.appendChild(grid);
+    // Draw lines connecting matched pairs
+    // Remove any existing line container
+    const oldLines = area.querySelector('#pair-lines');
+    if (oldLines) oldLines.remove();
+    const lineWrap = el('div', { id:'pair-lines' });
+    // Make the line wrapper overlay the pair area
+    lineWrap.style.position = 'absolute';
+    lineWrap.style.top = '0';
+    lineWrap.style.left = '0';
+    lineWrap.style.width = '100%';
+    lineWrap.style.height = '100%';
+    lineWrap.style.pointerEvents = 'none';
+    // Ensure the lines overlay appears above the buttons
+    lineWrap.style.zIndex = '10';
+    // Insert after grid so it overlays
+    area.appendChild(lineWrap);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    // Size the SVG to match the area so coordinates line up with the buttons.
+    const areaRect = area.getBoundingClientRect();
+    svg.setAttribute('width', areaRect.width);
+    svg.setAttribute('height', areaRect.height);
+    svg.setAttribute('viewBox', `0 0 ${areaRect.width} ${areaRect.height}`);
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.overflow = 'visible';
+    lineWrap.appendChild(svg);
+    // ensure color map exists
+    if (!pairState.colorMap) pairState.colorMap = {};
+    // Pastel palette with diverse hues for drawing connecting lines
+    const palette = ['#a2d5f2','#fbc4ab','#fde2e4','#c9e4de','#fcdada','#d4a5a5','#e2cfea','#c2d4ff','#f0e5d8'];
+    // Start allocating new colours from the current size of the colour map.
+    let nextColorIndex = Object.keys(pairState.colorMap || {}).length;
+    pairState.matches.forEach(mid => {
+      // assign color if not assigned
+      if (!pairState.colorMap[mid]) {
+        pairState.colorMap[mid] = palette[nextColorIndex % palette.length];
+        nextColorIndex++;
+      }
+      const color = pairState.colorMap[mid];
+      // find buttons by data attributes
+      const leftBtn = area.querySelector(`button[data-side="left"][data-id="${mid}"]`);
+      const rightBtn = area.querySelector(`button[data-side="right"][data-id="${mid}"]`);
+      if (leftBtn && rightBtn) {
+        // Compute positions relative to the pair area to draw the line. Do not redeclare areaRect
+        const ar = area.getBoundingClientRect();
+        const lb = leftBtn.getBoundingClientRect();
+        const rb = rightBtn.getBoundingClientRect();
+        const x1 = lb.right - ar.left;
+        const y1 = lb.top + lb.height / 2 - ar.top;
+        const x2 = rb.left - ar.left;
+        const y2 = rb.top + rb.height / 2 - ar.top;
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('class', 'pair-line');
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', 3);
+        svg.appendChild(line);
+        // tint matched buttons to match the line colour
+        leftBtn.style.background = color;
+        leftBtn.style.color = '#fff';
+        rightBtn.style.background = color;
+        rightBtn.style.color = '#fff';
+      }
+    });
   }
 
   // === Combination (Combinar) game ===
@@ -3529,6 +3864,8 @@ try {
     const setId = qs('#select-comb').value || currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     if (items.length < 2) { alert('Se requieren ≥ 2 tarjetas.'); return; }
     let count = items.length;
@@ -3547,10 +3884,10 @@ try {
     area.innerHTML = '';
     qs('#comb-progress').innerText = `0/${combState.items.length}`;
     combState.items.forEach((it, idx) => {
-      const row = el('div', { className:'row', style:'gap:8px; align-items:center; margin-bottom:6px;' });
+      const row = el('div', { className:'row comb-row', style:'gap:8px; align-items:center; margin-bottom:8px; padding:8px; border-radius:12px; background: var(--chip); border:1px solid var(--border); box-shadow: var(--shadow);' });
       // Use a dedicated class for combination terms to avoid oversized fonts
       const term = el('div', { className:'comb-term', style:'flex:1;', innerText: it.term });
-      const select = el('select', { style:'flex:1;' });
+      const select = el('select', { style:'flex:1; background: #fff; border:1px solid var(--border); border-radius:8px; padding:6px;' });
       select.appendChild(el('option', { value:'', innerText:'Seleccione...' }));
       // get definitions list and shuffle
       const defs = combState.items.slice().map(x => x.definition).sort(() => Math.random() - 0.5);
@@ -3635,6 +3972,8 @@ try {
     const setId = qs('#select-cloze').value || currentSet;
     if (!setId) { alert('Selecciona un set'); return; }
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     if (!items.length) { alert('Set vacío'); return; }
     const shuffled = items.slice().sort(() => Math.random() - 0.5);
@@ -3735,7 +4074,33 @@ try {
       scoreSpan.innerText = `${r.total}/4`;
       scoreSpan.className = 'badge ' + (r.total >= 3 ? 'ok' : r.total >= 2 ? 'warn' : 'err');
       evalBox.querySelector('#cloze-bar-fill').style.width = Math.round((r.total / 4) * 100) + '%';
-      fbDiv.innerHTML = `• Cobertura: <b>${r.covScore}/2</b> (mencionaste ${r.covHits}/${keys.essential.length}).<br>• Especificidad: <b>${r.specScore}/2</b> (detalle técnico o ejemplo/analogía).`;
+      // compute similarity and missing tokens for feedback
+      (function(){
+        const STOP_WORDS = new Set(['el','la','los','las','un','una','unos','unas','de','del','al','y','o','u','e','en','con','por','para','a','que','se','su','sus','es','son','como','más','menos','muy','esta','este','estos','estas','lo','le','les','ya','no','sí','sin','sobre','entre','cuando','donde','qué','cuál','cuáles','quien','quién','cual','porque','pues','esto','esa','ese','esas','esos','cada','tambien','también','tal','tan','tanto','otra','otro','otros','otras']);
+        function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+        function toks(s){ return norm(s).split(' ').filter(w=> w && w.length>=3 && !STOP_WORDS.has(w)); }
+        function sim(a,b){
+          const A = new Set(toks(a));
+          const B = new Set(toks(b));
+          if (B.size===0) return 0;
+          let ov=0; B.forEach(w=>{ if (A.has(w)) ov++; });
+          return ov / B.size;
+        }
+        const simScore = sim(text, item.definition);
+        const simPct = Math.round(simScore * 100);
+        const missing = (() => {
+          const at = toks(text); const ad = toks(item.definition);
+          const Aset = new Set(at); const missingArr = [];
+          ad.forEach(w=>{ if (!Aset.has(w) && missingArr.indexOf(w)===-1) missingArr.push(w); });
+          return missingArr.slice(0,3);
+        })();
+        fbDiv.innerHTML = 
+          `• Cobertura: <b>${r.covScore}/2</b> (mencionaste ${r.covHits}/${keys.essential.length}).<br>` +
+          `• Especificidad: <b>${r.specScore}/2</b> (detalle técnico o ejemplo/analogía).<br>` +
+          `• Similitud global: <b>${simPct}%</b>${simPct>=60?' ✔':' ✖'}.` +
+          (missing.length ? `<br>• Palabras clave faltantes: <i>${missing.join(', ')}</i>.` : '') +
+          `<br><br><strong>Definición:</strong> ${item.definition}`;
+      })();
       // Determine quality based on guess and elaboration
       let quality = 2;
       const gval = guessInput.value.trim().toLowerCase();
@@ -3922,6 +4287,8 @@ try {
     try {
       const data = JSON.parse(qs('#dump-area').value || '{}');
       db = { sets: data.sets || {}, items: data.items || {}, progress: data.progress || {}, folders: data.folders || {} };
+      // update global reference
+      window.db = db;
       save();
       renderAll();
       alert('Restaurado.');
@@ -4011,6 +4378,8 @@ try {
     const setId = sel && sel.value ? sel.value : currentSet;
     if (!setId) return;
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     const items = (db.items[setId] || []).slice();
     leeloState.order = items.map((_, i) => i);
     leeloState.index = 0;
@@ -4172,13 +4541,13 @@ try {
 
   // === Navigation ===
   function switchView(name) {
-    ['sets','flash','leelo','learn','test','match','pair','comb','cloze','import','drag'].forEach(v => {
+    ['sets','flash','leelo','learn','test','match','pair','comb','cloze','import','drag','sticky'].forEach(v => {
       const sec = qs('#view-' + v);
       if (sec) sec.classList.add('hidden');
     });
     const active = qs('#view-' + name);
     if (active) active.classList.remove('hidden');
-    ['nav-sets','nav-flash','nav-leelo','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import','nav-drag'].forEach(id => {
+    ['nav-sets','nav-flash','nav-leelo','nav-learn','nav-test','nav-match','nav-memory','nav-comb','nav-pair','nav-cloze','nav-import','nav-drag','nav-sticky'].forEach(id => {
       const btn = qs('#' + id);
       if (btn) btn.classList.remove('primary');
     });
@@ -4237,6 +4606,15 @@ try {
   qs('#nav-cloze').onclick = () => { switchView('cloze'); };
   qs('#nav-drag').onclick = () => { switchView('drag'); };
   qs('#nav-import').onclick = () => { switchView('import'); };
+
+  // Sticky notes navigation
+  const navSticky = qs('#nav-sticky');
+  if (navSticky) {
+    navSticky.onclick = () => {
+      switchView('sticky');
+      if (typeof window.initSticky === 'function') window.initSticky();
+    };
+  }
 
   // === Modals and events for sets ===
   qs('#btn-new-set').onclick = () => {
@@ -4515,6 +4893,8 @@ try {
       return;
     }
     currentSet = setId;
+    // Propagate currentSet to global
+    window.currentSet = currentSet;
     if (sel) sel.value = currentSet;
     dragState.setId = currentSet;
     dragState.deck = buildDragDeck(currentSet);
@@ -5287,6 +5667,797 @@ document.addEventListener('click', function(e){
   }
   var tries=0, iv=setInterval(function(){ wire(); tries++; if(tries>80) clearInterval(iv); }, 100);
   document.addEventListener('DOMContentLoaded', wire);
+})();
+</script>
+
+<!-- Sticky notes logic: integrates a board for creating, editing and organizing flashcards as notes. This script defines
+     functions and event handlers for the Sticky Notes tab and stores note positions, sizes and colors per set in
+     localStorage. It uses existing global functions such as `save`, `uuid`, `nowISO`, `renderSets` and `syncSelectors`
+     to persist changes back to the main data store. -->
+<script id="sticky-js">
+(function(){
+  // Palette of background classes for notes
+  const palette = ['p-1','p-2','p-3','p-4','p-5','p-6','p-7','p-8','p-9','p-10'];
+  const board = document.getElementById('sticky-board');
+  let notes = [];
+  let hideMode = false;
+  let drag = null;
+  let zTop = 200;
+  // Session state for focus mode
+  let stickySession = null;
+  // Compute note size based on combined term/definition length
+  function getSize(term, def) {
+    const len = (term + def).length;
+    return len > 160 ? 'size-l' : (len > 80 ? 'size-m' : 'size-s');
+  }
+  // Load persisted state (positions, color, size) for the current set
+  function loadState() {
+    if (!window.currentSet) return {};
+    try {
+      return JSON.parse(localStorage.getItem('sticky_state_' + window.currentSet)) || {};
+    } catch(e) {
+      return {};
+    }
+  }
+  // Save current note positions, colors and sizes to localStorage
+  function saveState() {
+    if (!window.currentSet) return;
+    const map = {};
+    notes.forEach(n => {
+      map[n.id] = { x: n.x, y: n.y, color: n.colorClass, size: n.size };
+    });
+    localStorage.setItem('sticky_state_' + window.currentSet, JSON.stringify(map));
+  }
+  // Initialize sticky notes for the currently selected set
+  function initSticky() {
+    // If no current set is defined, attempt to use the selected value from the sticky selector
+    if (!window.currentSet) {
+      // Prefer the selected value from the sticky selector if available
+      const sel = document.getElementById('select-sticky');
+      if (sel && sel.value) {
+        window.currentSet = sel.value;
+        if (typeof currentSet !== 'undefined') currentSet = sel.value;
+      } else {
+        // Otherwise pick the first set from the database if available
+        if (window.db && window.db.sets) {
+          const firstKey = Object.keys(window.db.sets)[0];
+          if (firstKey) {
+            window.currentSet = firstKey;
+            if (typeof currentSet !== 'undefined') currentSet = firstKey;
+          }
+        }
+        // If still no set, bail out until a set exists
+        if (!window.currentSet) return;
+      }
+    }
+    const items = window.db && window.db.items && window.db.items[window.currentSet] ? window.db.items[window.currentSet] : [];
+    const saved = loadState();
+    notes = [];
+    zTop = 200;
+    items.forEach((it, idx) => {
+      const s = saved[it.id] || {};
+      const col = s.color || palette[idx % palette.length];
+      const size = s.size || getSize(it.term, it.definition);
+      const x = (typeof s.x === 'number') ? s.x : (80 + Math.random() * 200);
+      const y = (typeof s.y === 'number') ? s.y : (80 + Math.random() * 200);
+      notes.push({ id: it.id, term: it.term, def: it.definition, colorClass: col, size: size, x: x, y: y, z: ++zTop, _revealed: false });
+    });
+    // Adjust the board size based on number of notes to give more room when sets are large
+    try {
+      const count = notes.length;
+      const cols = Math.ceil(Math.sqrt(count || 1));
+      const baseW = 320;
+      const baseH = 200;
+      const newW = Math.max(2200, cols * baseW);
+      const newH = Math.max(1600, cols * baseH);
+      if (board) {
+        board.style.width = newW + 'px';
+        board.style.height = newH + 'px';
+      }
+    } catch(e) {}
+    render();
+  }
+  // Render all notes on the board
+  function render() {
+    if (!board) return;
+    board.innerHTML = '';
+    notes.forEach(n => {
+      const node = document.createElement('div');
+      node.className = 'note ' + n.size + ' ' + n.colorClass;
+      node.dataset.id = n.id;
+      node.style.left = n.x + 'px';
+      node.style.top = n.y + 'px';
+      node.style.zIndex = n.z;
+      if (hideMode && !n._revealed) {
+        node.classList.add('hidden-def','study');
+      }
+      if (n._revealed) {
+        node.classList.add('revealed','study');
+      }
+      // Build chrome (header) with drag handle and tools
+      const chrome = document.createElement('div');
+      chrome.className = 'chrome';
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⬚ mover';
+      chrome.appendChild(handle);
+      const tools = document.createElement('div');
+      tools.className = 'tools';
+      // Tools: color cycle, size selectors, edit, delete
+      const actions = [
+        { act: 'cycle', txt: '🎨' },
+        { act: 'sizeS', txt: 'S' },
+        { act: 'sizeM', txt: 'M' },
+        { act: 'sizeL', txt: 'L' },
+        { act: 'edit', txt: '✎' },
+        { act: 'delete', txt: '🗑' }
+      ];
+      actions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'icon';
+        btn.dataset.act = a.act;
+        btn.textContent = a.txt;
+        tools.appendChild(btn);
+      });
+      chrome.appendChild(tools);
+      node.appendChild(chrome);
+      // Term and definition elements
+      const termEl = document.createElement('div');
+      termEl.className = 'term';
+      termEl.textContent = n.term;
+      const defEl = document.createElement('div');
+      defEl.className = 'def';
+      defEl.textContent = n.def;
+      node.appendChild(termEl);
+      node.appendChild(defEl);
+      // Event handlers
+      // Dragging
+      handle.addEventListener('pointerdown', (e) => startDrag(e, node));
+      handle.addEventListener('mousedown', (e) => startDrag(e, node));
+      node.addEventListener('mousedown', () => {
+        node.style.zIndex = ++zTop;
+        n.z = zTop;
+        saveState();
+      });
+      node.addEventListener('dblclick', () => toggleEdit(node, true));
+      // Reveal/hide definition in hide mode
+      node.addEventListener('click', (e) => {
+        if (!hideMode) return;
+        if (e.target.closest('.tools')) return;
+        n._revealed = !n._revealed;
+        render();
+        saveState();
+      });
+      // Tools actions
+      tools.querySelectorAll('.icon').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const act = btn.dataset.act;
+          if (act === 'cycle') {
+            cycleColor(n, node);
+          } else if (act === 'sizeS') {
+            resize(n, 'size-s', node);
+          } else if (act === 'sizeM') {
+            resize(n, 'size-m', node);
+          } else if (act === 'sizeL') {
+            resize(n, 'size-l', node);
+          } else if (act === 'edit') {
+            toggleEdit(node);
+          } else if (act === 'delete') {
+            deleteNote(n.id);
+          }
+        });
+      });
+      board.appendChild(node);
+    });
+  }
+  // Dragging logic
+  function startDrag(e, node) {
+    e.preventDefault();
+    const id = node.dataset.id;
+    const rect = node.getBoundingClientRect();
+    const bRect = board.getBoundingClientRect();
+    // capture initial offsets and board positioning for smoother dragging
+    drag = {
+      id: id,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      boardLeft: bRect.left,
+      boardTop: bRect.top
+    };
+    node.classList.add('dragging');
+    // capture the pointer to improve responsiveness on touch devices
+    try {
+      if (node.setPointerCapture) node.setPointerCapture(e.pointerId);
+    } catch {}
+    // listen to pointer events only
+    window.addEventListener('pointermove', onDrag);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('blur', endDrag);
+  }
+  function onDrag(e) {
+    if (!drag) return;
+    const node = board.querySelector('.note[data-id="' + drag.id + '"]');
+    if (!node) return;
+    // compute position relative to the board using cached rect for performance
+    const x = e.clientX - drag.boardLeft - drag.offsetX + board.scrollLeft;
+    const y = e.clientY - drag.boardTop - drag.offsetY + board.scrollTop;
+    node.style.left = x + 'px';
+    node.style.top = y + 'px';
+  }
+  function endDrag() {
+    if (!drag) return;
+    const node = board.querySelector('.note[data-id="' + drag.id + '"]');
+    if (node) {
+      node.classList.remove('dragging');
+      const n = notes.find(n => n.id === drag.id);
+      if (n) {
+        n.x = parseInt(node.style.left);
+        n.y = parseInt(node.style.top);
+        saveState();
+      }
+    }
+    drag = null;
+    // remove pointer-based listeners (mouse listeners not used)
+    window.removeEventListener('pointermove', onDrag);
+    window.removeEventListener('pointerup', endDrag);
+    window.removeEventListener('pointercancel', endDrag);
+    window.removeEventListener('blur', endDrag);
+  }
+  // Toggle editing for a note
+  function toggleEdit(node, forceOn) {
+    const id = node.dataset.id;
+    const termEl = node.querySelector('.term');
+    const defEl = node.querySelector('.def');
+    const editing = (forceOn !== undefined) ? forceOn : !termEl.isContentEditable;
+    termEl.contentEditable = defEl.contentEditable = editing;
+    if (editing) {
+      termEl.focus();
+    } else {
+      const n = notes.find(n => n.id === id);
+      if (n) {
+        n.term = termEl.textContent.trim();
+        n.def = defEl.textContent.trim();
+        // Update underlying flashcard item
+        if (window.db && window.db.items && window.db.items[window.currentSet]) {
+          const items = window.db.items[window.currentSet];
+          const it = items.find(it => it.id === id);
+          if (it) {
+            it.term = n.term;
+            it.definition = n.def;
+            // update size based on new content
+            n.size = getSize(n.term, n.def);
+            if (window.db.sets && window.db.sets[window.currentSet]) {
+              window.db.sets[window.currentSet].updatedAt = nowISO();
+            }
+            if (typeof save === 'function') save();
+          }
+        }
+        saveState();
+        render();
+        if (typeof syncSelectors === 'function') syncSelectors();
+        if (typeof renderSets === 'function') renderSets();
+      }
+    }
+  }
+  // Resize note size
+  function resize(n, size, node) {
+    n.size = size;
+    if (node) {
+      node.classList.remove('size-s','size-m','size-l');
+      node.classList.add(size);
+    } else {
+      render();
+    }
+    saveState();
+  }
+  // Cycle note color
+  function cycleColor(n, node) {
+    const idx = palette.indexOf(n.colorClass);
+    const next = palette[(idx + 1) % palette.length];
+    n.colorClass = next;
+    if (node) {
+      node.classList.remove(...palette);
+      node.classList.add(next);
+    } else {
+      render();
+    }
+    saveState();
+  }
+  // Delete a note and corresponding card
+  function deleteNote(id) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    const idx = notes.findIndex(x => x.id === id);
+    if (idx >= 0) notes.splice(idx, 1);
+    if (window.db && window.db.items && window.db.items[window.currentSet]) {
+      const arr = window.db.items[window.currentSet];
+      const j = arr.findIndex(it => it.id === id);
+      if (j >= 0) arr.splice(j, 1);
+    }
+    if (typeof save === 'function') save();
+    saveState();
+    render();
+    if (typeof syncSelectors === 'function') syncSelectors();
+    if (typeof renderSets === 'function') renderSets();
+  }
+  // Add a new note and card
+  function addNote() {
+    // When creating a new note, open a modal instead of using browser prompts.
+    if (!window.currentSet) { alert('Selecciona un set'); return; }
+    const scrim = document.getElementById('scrim-sticky-note');
+    if (scrim) {
+      scrim.style.display = 'flex';
+      const termInput = document.getElementById('sticky-term-input');
+      const defInput = document.getElementById('sticky-def-input');
+      if (termInput) termInput.value = '';
+      if (defInput) defInput.value = '';
+    }
+  }
+  // Remove all notes and items in current set
+  function clearBoard() {
+    if (!window.currentSet) return;
+    if (!confirm('¿Eliminar todas las notas?')) return;
+    if (window.db && window.db.items && window.db.items[window.currentSet]) {
+      window.db.items[window.currentSet].splice(0, window.db.items[window.currentSet].length);
+    }
+    notes = [];
+    if (typeof save === 'function') save();
+    saveState();
+    render();
+    if (typeof syncSelectors === 'function') syncSelectors();
+    if (typeof renderSets === 'function') renderSets();
+  }
+  // Arrange notes in columns by color
+  function autoLayout() {
+    if (!notes.length) return;
+    const groups = {};
+    palette.forEach(p => { groups[p] = []; });
+    notes.forEach(n => {
+      const c = n.colorClass || palette[0];
+      groups[c].push(n);
+    });
+    const colW = 340;
+    let col = 0;
+    for (const p of palette) {
+      const arr = groups[p];
+      if (!arr || !arr.length) continue;
+      let y = 18;
+      const x = 18 + col * colW;
+      arr.forEach(n => {
+        n.x = x;
+        n.y = y;
+        y += 18 + (n.size === 'size-l' ? 220 : n.size === 'size-m' ? 170 : 130);
+      });
+      col++;
+    }
+    render();
+    saveState();
+  }
+  // Scatter notes randomly within board
+  function shuffle() {
+    if (!notes.length) return;
+    // Use the board's actual dimensions (style width/height or scroll size) to scatter notes
+    const w = parseInt(board.style.width) || board.scrollWidth || board.clientWidth || 1600;
+    const h = parseInt(board.style.height) || board.scrollHeight || board.clientHeight || 1200;
+    notes.forEach(n => {
+      n.x = 80 + Math.random() * Math.max(0, w - 300);
+      n.y = 80 + Math.random() * Math.max(0, h - 300);
+    });
+    render();
+    saveState();
+  }
+  // Stack notes by color (similar to auto layout)
+  function stackByColor() {
+    if (!notes.length) return;
+    const groups = {};
+    palette.forEach(p => { groups[p] = []; });
+    notes.forEach(n => {
+      const c = n.colorClass || palette[0];
+      groups[c].push(n);
+    });
+    const colW = 340;
+    let col = 0;
+    for (const p of palette) {
+      const arr = groups[p];
+      if (!arr || !arr.length) continue;
+      let y = 18;
+      const x = 18 + col * colW;
+      arr.forEach(n => {
+        n.x = x;
+        n.y = y;
+        y += 18 + (n.size === 'size-l' ? 220 : n.size === 'size-m' ? 170 : 130);
+      });
+      col++;
+    }
+    render();
+    saveState();
+  }
+  // Toggle definition visibility
+  function toggleHideDefs() {
+    hideMode = !hideMode;
+    const btn = document.getElementById('sticky-hide');
+    if (btn) btn.innerText = hideMode ? 'Mostrar definiciones' : 'Ocultar definiciones';
+    if (hideMode) {
+      notes.forEach(n => { n._revealed = false; });
+    }
+    render();
+    saveState();
+  }
+
+  // === Additional helpers for enhanced sticky notes ===
+  // Persist a new note from the modal into the DB and board
+  function finalizeStickyNote() {
+    if (!window.currentSet) { alert('Selecciona un set'); return; }
+    const termInput = document.getElementById('sticky-term-input');
+    const defInput = document.getElementById('sticky-def-input');
+    const term = termInput ? termInput.value.trim() : '';
+    const def = defInput ? defInput.value.trim() : '';
+    if (!term) { alert('Ingresa un término'); return; }
+    if (!def) { alert('Ingresa una definición'); return; }
+    const id = uuid();
+    // Add to database
+    if (window.db && window.db.items) {
+      window.db.items[window.currentSet] = window.db.items[window.currentSet] || [];
+      window.db.items[window.currentSet].push({ id: id, term: term, definition: def, image: null, extra_notes: '', tags: [], difficulty: null });
+      if (window.db.sets && window.db.sets[window.currentSet]) {
+        window.db.sets[window.currentSet].updatedAt = nowISO();
+      }
+      if (typeof save === 'function') save();
+    }
+    const size = getSize(term, def);
+    const col = palette[notes.length % palette.length];
+    // Use board dimensions to place the note randomly within available space
+    const w = parseInt(board.style.width) || board.scrollWidth || board.clientWidth || 1600;
+    const h = parseInt(board.style.height) || board.scrollHeight || board.clientHeight || 1200;
+    const x = 80 + Math.random() * Math.max(0, w - 300);
+    const y = 80 + Math.random() * Math.max(0, h - 300);
+    notes.push({ id: id, term: term, def: def, colorClass: col, size: size, x: x, y: y, z: ++zTop, _revealed: false });
+    render();
+    saveState();
+    if (typeof syncSelectors === 'function') syncSelectors();
+    if (typeof renderSets === 'function') renderSets();
+    const scrim = document.getElementById('scrim-sticky-note');
+    if (scrim) scrim.style.display = 'none';
+  }
+
+  // ======== Enhanced focus session (sesión de enfoque) implementation ========
+
+  // Helpers for similarity scoring and stats
+  const STICKY_STOP = new Set(['el','la','los','las','un','una','unos','unas','de','del','al','y','o','u','e','en','con','por','para','a','que','se','su','sus','es','son','como','más','menos','muy','esta','este','estos','estas','lo','le','les','ya','no','sí','sin','sobre','entre','cuando','donde','qué','cuál','cuáles','quien','quién','cual','porque','pues','esto','esa','ese','esas','esos','cada','tambien','también','tal','tan','tanto','otra','otro','otros','otras']);
+  function stickyNormalize(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9\s]/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  function stickyTokens(s){
+    return stickyNormalize(s).split(' ').filter(w=> w && w.length>=3 && !STICKY_STOP.has(w));
+  }
+  function stickySimilarityScore(input, target){
+    const A = new Set(stickyTokens(input));
+    const B = new Set(stickyTokens(target));
+    if (B.size===0) return 0;
+    let overlap=0; B.forEach(w=>{ if (A.has(w)) overlap++; });
+    return overlap / B.size;
+  }
+  function stickyDefaultStats(){ return { attempts:0, correct:0, level:1, last:null }; }
+  function buildStickyQueue(){
+    // build a queue sorted by correctness ratio (lower first) with slight noise
+    try{
+      const list = notes.slice();
+      const items = (window.db && window.db.items && window.currentSet) ? window.db.items[window.currentSet] : null;
+      const scored = list.map(n=>{
+        let stats = null;
+        if (items){
+          const it = items.find(it=> it.id === n.id);
+          stats = (it && it.stats) || n.stats || stickyDefaultStats();
+        } else {
+          stats = n.stats || stickyDefaultStats();
+        }
+        const prec = stats.attempts ? (stats.correct / stats.attempts) : 0;
+        return { id:n.id, prec: prec + Math.random()*0.05 };
+      }).sort((a,b)=> a.prec - b.prec);
+      return scored.map(x=> x.id);
+    } catch(e){
+      // fallback random order
+      const ids = notes.map(n=> n.id).slice();
+      ids.sort(()=> Math.random()-0.5);
+      return ids;
+    }
+  }
+  function startStickySession(){
+    if (!notes || !notes.length){ alert('No hay notas en el set.'); return; }
+    try { endDrag(); }catch(e){}
+    // minutes
+    let minutes = 8;
+    const minsInput = document.getElementById('sticky-minutes');
+    if (minsInput && minsInput.value){
+      minutes = parseInt(minsInput.value, 10);
+      if (isNaN(minutes) || minutes < 1) minutes = 1;
+      if (minutes > 60) minutes = 60;
+    }
+    const queue = buildStickyQueue();
+    stickySession = {
+      idx: 0,
+      queue: queue,
+      start: Date.now(),
+      correct: 0,
+      seen: 0,
+      revealed: false,
+      secs: minutes * 60,
+      ticker: null
+    };
+    // Show overlay
+    const scrim = document.getElementById('scrim-sticky-session');
+    if (scrim) scrim.style.display = 'flex';
+    loadStickyCard();
+    updateStickyUI();
+    // Start timer
+    if (stickySession.ticker) clearInterval(stickySession.ticker);
+    stickySession.ticker = setInterval(()=>{
+      if (!stickySession) return;
+      stickySession.secs -= 1;
+      if (stickySession.secs < 0){
+        endStickySession();
+        return;
+      }
+      // update timer display
+      const m = Math.floor(stickySession.secs/60).toString().padStart(2,'0');
+      const s = (stickySession.secs%60).toString().padStart(2,'0');
+      const timerEl = document.getElementById('sticky-sess-timer');
+      if (timerEl) timerEl.textContent = m + ':' + s;
+    }, 1000);
+  }
+  function getCurrentStickyNote(){
+    if (!stickySession) return null;
+    const id = stickySession.queue[stickySession.idx];
+    return notes.find(n=> n.id === id);
+  }
+  function loadStickyCard(){
+    const n = getCurrentStickyNote();
+    const termEl = document.getElementById('sticky-sess-term');
+    const defEl = document.getElementById('sticky-sess-def');
+    const inputEl = document.getElementById('sticky-sess-input');
+    const feedbackEl = document.getElementById('sticky-sess-feedback');
+    if (termEl) termEl.textContent = n ? n.term : '';
+    if (defEl){
+      defEl.textContent = n ? n.def : '';
+      defEl.classList.add('hidden');
+    }
+    if (inputEl) inputEl.value = '';
+    if (feedbackEl) feedbackEl.textContent = '';
+    stickySession.revealed = false;
+    // update progress
+    const progEl = document.getElementById('sticky-sess-progress');
+    if (progEl) progEl.textContent = (stickySession.idx+1) + ' / ' + stickySession.queue.length;
+    // update timer display (in case)
+    const timerEl = document.getElementById('sticky-sess-timer');
+    if (timerEl){
+      const m = Math.floor(stickySession.secs/60).toString().padStart(2,'0');
+      const s = (stickySession.secs%60).toString().padStart(2,'0');
+      timerEl.textContent = m + ':' + s;
+    }
+  }
+  function updateStickyUI(){
+    // update percentage of correct answers
+    if (!stickySession) return;
+    const total = Math.max(1, stickySession.seen);
+    const pct = Math.round(100 * stickySession.correct / total);
+    const scoreEl = document.getElementById('sticky-sess-score');
+    if (scoreEl) scoreEl.textContent = pct + '%';
+  }
+  function revealStickyDef(){
+    if (!stickySession) return;
+    const defEl = document.getElementById('sticky-sess-def');
+    const inputEl = document.getElementById('sticky-sess-input');
+    const feedbackEl = document.getElementById('sticky-sess-feedback');
+    if (!stickySession.revealed){
+      stickySession.revealed = true;
+      if (defEl) defEl.classList.remove('hidden');
+      if (feedbackEl){
+        const n = getCurrentStickyNote();
+        if (inputEl && inputEl.value.trim().length){
+          const score = stickySimilarityScore(inputEl.value, n ? n.def : '');
+          const pct = Math.round(score*100);
+          const ok = score >= 0.6;
+          feedbackEl.textContent = 'Coincidencia: ' + pct + '% ' + (ok ? '✔' : '✖');
+        } else {
+          feedbackEl.textContent = 'Revisado.';
+        }
+      }
+    } else {
+      nextSticky();
+    }
+  }
+  function nextSticky(){
+    if (!stickySession) return;
+    stickySession.idx = (stickySession.idx + 1) % stickySession.queue.length;
+    loadStickyCard();
+  }
+  function prevSticky(){
+    if (!stickySession) return;
+    stickySession.idx = (stickySession.idx - 1 + stickySession.queue.length) % stickySession.queue.length;
+    loadStickyCard();
+  }
+  function rateSticky(delta){
+    if (!stickySession) return;
+    const n = getCurrentStickyNote();
+    if (!n) return;
+    // find item in db to update stats
+    let stats = null;
+    if (window.db && window.db.items && window.currentSet){
+      const items = window.db.items[window.currentSet];
+      const it = items ? items.find(it=> it.id === n.id) : null;
+      if (it){
+        it.stats = it.stats || stickyDefaultStats();
+        stats = it.stats;
+      }
+    }
+    if (!stats){
+      n.stats = n.stats || stickyDefaultStats();
+      stats = n.stats;
+    }
+    stats.attempts += 1;
+    stats.last = nowISO();
+    if (delta===3){
+      stats.correct += 1;
+      stats.level = Math.min(3, (stats.level||1) + 1);
+      stickySession.correct += 1;
+    } else if (delta===2){
+      // doubt: level unchanged; add correct if similarity high
+      stats.level = Math.max(1, (stats.level||1));
+    } else if (delta===1){
+      stats.level = 1;
+    }
+    stickySession.seen += 1;
+    if (delta===2){
+      // if similarity >=0.7 then count as correct
+      const inputEl = document.getElementById('sticky-sess-input');
+      const inputVal = inputEl ? inputEl.value.trim() : '';
+      if (inputVal.length){
+        const sc = stickySimilarityScore(inputVal, n.def);
+        if (sc >= 0.7){
+          stats.correct += 1;
+          stickySession.correct += 1;
+        }
+      }
+    }
+    if (typeof save === 'function') save();
+    updateStickyUI();
+    nextSticky();
+  }
+  function endStickySession(){
+    if (!stickySession) return;
+    try{ clearInterval(stickySession.ticker); }catch{}
+    const total = Math.max(1, stickySession.seen);
+    const pct = Math.round(100 * stickySession.correct / total);
+    const summaryEl = document.getElementById('sticky-sess-summary');
+    if (summaryEl) summaryEl.innerHTML = 'Resumen: ' + stickySession.correct + ' correctas de ' + total + ' (' + pct + '%).';
+    // hide overlay after slight delay to show summary if at least one card seen
+    setTimeout(()=>{
+      const scrim = document.getElementById('scrim-sticky-session');
+      if (scrim) scrim.style.display = 'none';
+      stickySession = null;
+    }, 2000);
+    updateStickyUI();
+  }
+  function stickySessionKeyHandler(e){
+    if (!stickySession) return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    // avoid intercepting when editing in textarea except Enter
+    if (tag === 'TEXTAREA'){
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        revealStickyDef();
+      }
+      return;
+    }
+    if (e.key === 'Enter'){ e.preventDefault(); revealStickyDef(); }
+    if (e.key === 'ArrowRight'){ e.preventDefault(); nextSticky(); }
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); prevSticky(); }
+    if (e.key === '1'){ e.preventDefault(); rateSticky(1); }
+    if (e.key === '2'){ e.preventDefault(); rateSticky(2); }
+    if (e.key === '3'){ e.preventDefault(); rateSticky(3); }
+  }
+  // Wire control buttons after DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    const newBtn = document.getElementById('sticky-new');
+    const clearBtn = document.getElementById('sticky-clear');
+    const autoBtn = document.getElementById('sticky-auto');
+    const shuffleBtn = document.getElementById('sticky-shuffle');
+    const stackBtn = document.getElementById('sticky-stack');
+    const hideBtn = document.getElementById('sticky-hide');
+    if (newBtn) newBtn.addEventListener('click', addNote);
+    if (clearBtn) clearBtn.addEventListener('click', clearBoard);
+    if (autoBtn) autoBtn.addEventListener('click', autoLayout);
+    if (shuffleBtn) shuffleBtn.addEventListener('click', shuffle);
+    if (stackBtn) stackBtn.addEventListener('click', stackByColor);
+    if (hideBtn) hideBtn.addEventListener('click', toggleHideDefs);
+
+    // Wire zoom control: scale the board based on slider value
+    const zoomInput = document.getElementById('sticky-zoom');
+    if (zoomInput) {
+      const applyZoom = () => {
+        if (board && zoomInput) {
+          board.style.transform = 'scale(' + zoomInput.value + ')';
+        }
+      };
+      zoomInput.addEventListener('input', applyZoom);
+      // Apply initial zoom
+      applyZoom();
+    }
+    // Wire set selector for sticky notes
+    const stickySel = document.getElementById('select-sticky');
+    if (stickySel) {
+      stickySel.addEventListener('change', () => {
+        const setId = stickySel.value;
+        if (!setId) return;
+        currentSet = setId;
+        window.currentSet = setId;
+        if (typeof syncSelectors === 'function') syncSelectors();
+        if (typeof renderSets === 'function') renderSets();
+        if (typeof initSticky === 'function') initSticky();
+      });
+    }
+    // Wire focus session button
+    const sessBtn = document.getElementById('sticky-session');
+    if (sessBtn) sessBtn.addEventListener('click', startStickySession);
+
+    // Fullscreen toggle for the sticky notes board.  When clicked the
+    // board wrapper enters native fullscreen mode if supported.  A
+    // subsequent click exits fullscreen.  We prefer to request
+    // fullscreen on the board wrapper so the sticky notes remain
+    // scrollable inside the viewport.  Fallbacks for prefixed
+    // WebKit APIs are included for older browsers.
+    const fullscreenBtn = document.getElementById('sticky-fullscreen');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        const wrap = document.getElementById('sticky-board-wrap') || document.getElementById('view-sticky');
+        if (!document.fullscreenElement) {
+          if (wrap.requestFullscreen) {
+            wrap.requestFullscreen();
+          } else if (wrap.webkitRequestFullscreen) {
+            wrap.webkitRequestFullscreen();
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      });
+    }
+    // Wire save and cancel buttons for new note modal
+    const saveBtn = document.getElementById('sticky-save-note');
+    if (saveBtn) saveBtn.addEventListener('click', finalizeStickyNote);
+    const cancelBtn = document.getElementById('sticky-cancel-note');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+      const scrim = document.getElementById('scrim-sticky-note');
+      if (scrim) scrim.style.display = 'none';
+    });
+    // Wire enhanced session control buttons
+    const revealBtn = document.getElementById('sticky-sess-reveal');
+    if (revealBtn) revealBtn.addEventListener('click', revealStickyDef);
+    const prevBtn = document.getElementById('sticky-sess-prev');
+    if (prevBtn) prevBtn.addEventListener('click', prevSticky);
+    const nextBtn = document.getElementById('sticky-sess-next');
+    if (nextBtn) nextBtn.addEventListener('click', nextSticky);
+    const easyBtn = document.getElementById('sticky-sess-easy');
+    if (easyBtn) easyBtn.addEventListener('click', () => rateSticky(3));
+    const doubtBtn = document.getElementById('sticky-sess-doubt');
+    if (doubtBtn) doubtBtn.addEventListener('click', () => rateSticky(2));
+    const hardBtn = document.getElementById('sticky-sess-hard');
+    if (hardBtn) hardBtn.addEventListener('click', () => rateSticky(1));
+    const endBtn = document.getElementById('sticky-sess-end');
+    if (endBtn) endBtn.addEventListener('click', endStickySession);
+    // Global key handler for session
+    window.addEventListener('keydown', stickySessionKeyHandler);
+  });
+  // Expose initSticky globally
+  window.initSticky = initSticky;
 })();
 </script>
 
