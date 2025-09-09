@@ -2292,7 +2292,9 @@ header { z-index: 2000; }              /* el header crea el stacking context má
               <path d="M3 21v-6h2v4h4v2H3z"/>
             </svg>
           </button>
-        </div>
+        
+           <button id="sticky-export-pdf" class="ghost">Exportar PDF</button>
+          </div>
       </div>
       <div id="sticky-board-wrap" class="board-wrap">
         <div id="sticky-board" class="board"></div>
@@ -6458,6 +6460,132 @@ document.addEventListener('click', function(e){
   });
   // Expose initSticky globally
   window.initSticky = initSticky;
+
+  // === Export Sticky Notes to PDF ===
+  function rgbaStrToRgb(rgba) {
+    var m = (rgba || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!m) return {r: 255, g: 255, b: 255};
+    return { r: parseInt(m[1],10), g: parseInt(m[2],10), b: parseInt(m[3],10) };
+  }
+  function getComputedBgRGB(el){
+    var st = getComputedStyle(el);
+    var bg = st.backgroundColor || '#ffffff';
+    return rgbaStrToRgb(bg);
+  }
+  function collectStickyNotes(){
+    const list = Array.from(board.querySelectorAll('.note'));
+    return list.map(n => {
+      const termEl = n.querySelector('.term');
+      const defEl  = n.querySelector('.def');
+      const term = termEl ? termEl.textContent.trim() : '';
+      const def  = defEl ? defEl.textContent.trim() : '';
+      const rgb  = getComputedBgRGB(n);
+      return { term, def, rgb };
+    }).filter(n => n.term || n.def);
+  }
+  function generateStickyPDF(){
+    const src = window.jspdf || window.jsPDF;
+    const jsPDFCtor = src && (src.jsPDF || src);
+    if (!jsPDFCtor) { alert('No se pudo cargar jsPDF. Verifica tu conexión.'); return; }
+    const doc = new jsPDFCtor({ unit: 'pt', format: 'a4', compress: true, putOnlyUsedFonts: true });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = { l: 36, t: 48, r: 36, b: 48 };
+    const titleH = 28;
+    const gap = 12;
+    const columns = 2; // seguro para textos largos
+    const colW = (pageW - margin.l - margin.r - gap * (columns - 1)) / columns;
+    const pad = 10;
+
+    // Encabezado
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    const setName = (document.querySelector('#select-sticky option:checked')?.textContent || 'Set actual').trim();
+    const title = 'Informe de Sticky Notes — ' + setName;
+    doc.text(title, margin.l, margin.t);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+    const dateStr = new Date().toLocaleString();
+    doc.text(dateStr, pageW - margin.r, margin.t, { align: 'right' });
+
+    let x = margin.l;
+    let y = margin.t + titleH;
+
+    const notes = collectStickyNotes();
+    if (!notes.length){
+      doc.setFontSize(14); doc.text('No hay sticky notes para exportar.', margin.l, y);
+      const url = doc.output('bloburl'); window.open(url, '_blank'); return;
+    }
+
+    function measureCard(note){
+      const contentW = colW - pad*2;
+      const termFS = note.term.length > 60 ? 12 : (note.term.length > 30 ? 14 : 16);
+      const defFS  = note.def.length  > 200 ? 10 : (note.def.length  > 120 ? 11 : 12);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(termFS);
+      const tLines = doc.splitTextToSize(note.term || '', contentW);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(defFS);
+      const dLines = doc.splitTextToSize(note.def || '', contentW);
+      const tLH = termFS * 1.2, dLH = defFS * 1.25;
+      const termH = Math.max(tLH, tLines.length * tLH);
+      const defH  = dLines.length ? Math.max(dLH, dLines.length * dLH) : 0;
+      return { height: pad + termH + (dLines.length ? 6 : 0) + defH + pad,
+               termFS, defFS, tLines, dLines, tLH, dLH };
+    }
+    function renderCard(note, atX, atY, measured){
+      const m = measured || measureCard(note);
+      const contentW = colW - pad*2;
+      // Fondo
+      doc.setDrawColor(230, 170, 200);
+      doc.setLineWidth(0.8);
+      doc.setFillColor(note.rgb.r, note.rgb.g, note.rgb.b);
+      doc.roundedRect(atX, atY, colW, m.height, 10, 10, 'FD');
+      // Texto
+      let tx = atX + pad, ty = atY + pad + m.tLH;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(m.termFS);
+      m.tLines.forEach(ln => { doc.text(ln, tx, ty); ty += m.tLH; });
+      if (m.dLines.length){
+        ty += 2;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(m.defFS);
+        m.dLines.forEach(ln => { doc.text(ln, tx, ty); ty += m.dLH; });
+      }
+      return m.height;
+    }
+
+    notes.forEach((note, idx) => {
+      const m = measureCard(note);
+      if (y + m.height > pageH - margin.b){
+        // siguiente columna o siguiente página
+        if (x + colW + gap <= pageW - margin.r){
+          x += colW + gap;
+          y = margin.t + titleH;
+        } else {
+          doc.addPage();
+          // Repetir encabezado
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+          doc.text(title, margin.l, margin.t);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+          doc.text(dateStr, pageW - margin.r, margin.t, { align: 'right' });
+          x = margin.l;
+          y = margin.t + titleH;
+        }
+      }
+      const h = renderCard(note, x, y, m);
+      y += h + gap;
+    });
+
+    // Abrir vista previa y también disparar descarga
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    try { doc.save('sticky-notes.pdf'); } catch(e){ /* algunas plataformas bloquean auto-descarga */ }
+  }
+
+  // Wire button
+  document.addEventListener('click', function(ev){
+    const t = ev.target;
+    if (t && t.id === 'sticky-export-pdf'){
+      generateStickyPDF();
+    }
+  });
+
 })();
 </script>
 
