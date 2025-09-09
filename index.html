@@ -6500,7 +6500,7 @@ document.addEventListener('click', function(e){
     // Encabezado
     doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
     const setName = (document.querySelector('#select-sticky option:checked')?.textContent || 'Set actual').trim();
-    const title = 'Informe de Sticky Notes — ' + setName;
+    const title = 'Pengu Sticky — ' + setName;
     doc.text(title, margin.l, margin.t);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
     const dateStr = new Date().toLocaleString();
